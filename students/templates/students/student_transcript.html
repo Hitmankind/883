@@ -1,0 +1,385 @@
+{% extends 'students/base.html' %}
+
+{% block title %}
+    {% if student %}{{ student.name }}的成绩单{% else %}学生成绩单{% endif %} - 学生成绩管理系统
+{% endblock %}
+
+{% block page_title %}学生成绩单{% endblock %}
+
+{% block content %}
+{% if not student %}
+<!-- 学生选择界面 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-person-check"></i>
+            选择学生
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="GET">
+            <div class="row">
+                <div class="col-md-8">
+                    <select class="form-select" name="student_id" required>
+                        <option value="">请选择学生</option>
+                        {% for s in students %}
+                        <option value="{{ s.student_id }}">{{ s.student_id }} - {{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> 查看成绩单
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% else %}
+<!-- 学生基本信息 -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-badge"></i>
+                    {{ student.name }} 的成绩单
+                </h5>
+            </div>
+            <div class="col-auto">
+                <div class="btn-group">
+                    <button onclick="window.print()" class="btn btn-light btn-sm">
+                        <i class="bi bi-printer"></i> 打印
+                    </button>
+                    <a href="{% url 'students:student_list' %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-arrow-left"></i> 返回
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>学号：</strong></td>
+                        <td>{{ student.student_id }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>姓名：</strong></td>
+                        <td>{{ student.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>性别：</strong></td>
+                        <td>{{ student.gender }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>出生日期：</strong></td>
+                        <td>{{ student.birth_date }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>专业：</strong></td>
+                        <td>{{ student.major }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>学院：</strong></td>
+                        <td>{{ student.college }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 成绩列表 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-list-check"></i>
+            课程成绩列表
+        </h6>
+    </div>
+    <div class="card-body">
+        {% if scores %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>课程号</th>
+                            <th>课程名称</th>
+                            <th>课程类型</th>
+                            <th>学分</th>
+                            <th>成绩</th>
+                            <th>等级</th>
+                            <th>录入日期</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for score in scores %}
+                        <tr>
+                            <td>{{ score.course.course_id }}</td>
+                            <td>{{ score.course.course_name }}</td>
+                            <td>
+                                {% with course_id=score.course.course_id %}
+                                    {% if course_id|slice:":4" == "JCKC" %}
+                                        <span class="badge bg-primary">基础课程</span>
+                                    {% elif course_id|slice:":4" == "ZYBX" %}
+                                        <span class="badge bg-success">专业必修</span>
+                                    {% elif course_id|slice:":4" == "ZYXX" %}
+                                        <span class="badge bg-info">专业选修</span>
+                                    {% elif course_id|slice:":4" == "BYSJ" %}
+                                        <span class="badge bg-warning">毕业设计</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">其他</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>{{ score.course.credits }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if score.score >= 90 %}bg-success
+                                    {% elif score.score >= 80 %}bg-primary
+                                    {% elif score.score >= 70 %}bg-info
+                                    {% elif score.score >= 60 %}bg-warning
+                                    {% else %}bg-danger
+                                    {% endif %}">
+                                    {{ score.score }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if score.score >= 90 %}
+                                    <span class="text-success">优秀</span>
+                                {% elif score.score >= 80 %}
+                                    <span class="text-primary">良好</span>
+                                {% elif score.score >= 70 %}
+                                    <span class="text-info">中等</span>
+                                {% elif score.score >= 60 %}
+                                    <span class="text-warning">及格</span>
+                                {% else %}
+                                    <span class="text-danger">不及格</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ score.date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-file-text display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">暂无成绩记录</h4>
+                <p class="text-muted">该学生还没有任何课程成绩</p>
+                <a href="{% url 'students:score_single_input' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> 录入成绩
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 成绩统计 -->
+{% if scores %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up"></i>
+                    成绩统计
+                </h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>总课程数：</strong></td>
+                        <td>{{ total_courses }}门</td>
+                    </tr>
+                    <tr>
+                        <td><strong>总学分：</strong></td>
+                        <td>{{ total_credits }}分</td>
+                    </tr>
+                    <tr>
+                        <td><strong>平均成绩：</strong></td>
+                        <td>
+                            <span class="badge 
+                                {% if average_score >= 90 %}bg-success
+                                {% elif average_score >= 80 %}bg-primary
+                                {% elif average_score >= 70 %}bg-info
+                                {% elif average_score >= 60 %}bg-warning
+                                {% else %}bg-danger
+                                {% endif %}">
+                                {{ average_score|floatformat:1 }}分
+                            </span>
+                        </td>
+                    </tr>
+                    {% if highest_score %}
+                    <tr>
+                        <td><strong>最高成绩：</strong></td>
+                        <td>
+                            <span class="badge bg-success">{{ highest_score.score }}分</span>
+                            <br>
+                            <small class="text-muted">{{ highest_score.course.course_name }}</small>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if lowest_score %}
+                    <tr>
+                        <td><strong>最低成绩：</strong></td>
+                        <td>
+                            <span class="badge 
+                                {% if lowest_score.score >= 60 %}bg-warning
+                                {% else %}bg-danger
+                                {% endif %}">
+                                {{ lowest_score.score }}分
+                            </span>
+                            <br>
+                            <small class="text-muted">{{ lowest_score.course.course_name }}</small>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-pie-chart"></i>
+                    成绩分布
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="border-end">
+                            <h5 class="text-success">{{ excellent_count }}</h5>
+                            <p class="text-muted mb-0">优秀</p>
+                            <small class="text-muted">(90+)</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h5 class="text-primary">{{ good_count }}</h5>
+                        <p class="text-muted mb-0">良好</p>
+                        <small class="text-muted">(80-89)</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="border-end">
+                            <h5 class="text-info">{{ medium_count }}</h5>
+                            <p class="text-muted mb-0">中等</p>
+                            <small class="text-muted">(70-79)</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h5 class="text-warning">{{ pass_count }}</h5>
+                        <p class="text-muted mb-0">及格</p>
+                        <small class="text-muted">(60-69)</small>
+                    </div>
+                    <div class="col-12">
+                        <h5 class="text-danger">{{ fail_count }}</h5>
+                        <p class="text-muted mb-0">不及格</p>
+                        <small class="text-muted">(<60)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 课程类型统计 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-collection"></i>
+                    课程类型统计
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h5 class="text-primary">{{ jckc_count }}</h5>
+                            <p class="text-muted mb-0">基础课程</p>
+                            <small class="text-muted">{{ jckc_credits }}学分</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h5 class="text-success">{{ zybx_count }}</h5>
+                            <p class="text-muted mb-0">专业必修</p>
+                            <small class="text-muted">{{ zybx_credits }}学分</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h5 class="text-info">{{ zyxx_count }}</h5>
+                            <p class="text-muted mb-0">专业选修</p>
+                            <small class="text-muted">{{ zyxx_credits }}学分</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <h5 class="text-warning">{{ bysj_count }}</h5>
+                        <p class="text-muted mb-0">毕业设计</p>
+                        <small class="text-muted">{{ bysj_credits }}学分</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 操作按钮 -->
+{% if student %}
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <div class="btn-group">
+            <a href="{% url 'students:student_edit' student.student_id %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> 编辑学生信息
+            </a>
+            <a href="{% url 'students:enrollment_manage' %}?student_id={{ student.student_id }}" class="btn btn-outline-info">
+                <i class="bi bi-collection"></i> 管理选课
+            </a>
+            <a href="{% url 'students:score_single_input' %}?student_id={{ student.student_id }}" class="btn btn-outline-success">
+                <i class="bi bi-plus-circle"></i> 录入成绩
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    .btn, .btn-group {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #dee2e6 !important;
+        box-shadow: none !important;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+    }
+    
+    .badge {
+        border: 1px solid #000 !important;
+    }
+}
+</style>
+{% endblock %}

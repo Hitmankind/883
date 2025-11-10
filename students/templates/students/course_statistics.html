@@ -1,0 +1,524 @@
+{% extends 'students/base.html' %} 
+
+{% block title %}{{ course.course_name }} Grade Statistics - Student Grade Management System{% endblock %} 
+
+{% block page_title %}Course Grade Statistics{% endblock %} 
+
+{% block content %} 
+{% if course %}
+<!-- Course Basic Information -->
+<div class="card mb-4">
+  <div class="card-header bg-info text-white">
+    <div class="row align-items-center">
+      <div class="col">
+        <h5 class="mb-0">
+          <i class="bi bi-graph-up"></i>
+          {{ course.course_name }} Grade Statistics
+        </h5>
+      </div>
+      <div class="col-auto">
+        <div class="btn-group">
+          <button onclick="window.print()" class="btn btn-light btn-sm">
+            <i class="bi bi-printer"></i> Print
+          </button>
+          <a
+            href="{% url 'students:course_list' %}"
+            class="btn btn-outline-light btn-sm"
+          >
+            <i class="bi bi-arrow-left"></i> Back
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tr>
+            <td><strong>Course ID：</strong></td>
+            <td>{{ course.course_id }}</td>
+          </tr>
+          <tr>
+            <td><strong>Course Name：</strong></td>
+            <td>{{ course.course_name }}</td>
+          </tr>
+          <tr>
+            <td><strong>Credits：</strong></td>
+            <td>{{ course.credits }} credits</td>
+          </tr>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <table class="table table-borderless">
+          <tr>
+            <td><strong>Course Type：</strong></td>
+            <td>
+              {% with course_id=course.course_id %}
+              {% if course_id|slice:":4" == "JCKC" %}
+              <span class="badge bg-primary">Basic Course</span>
+              {% elif course_id|slice:":4" == "ZYBX" %}
+              <span class="badge bg-success">Major Required</span>
+              {% elif course_id|slice:":4" == "ZYXX" %}
+              <span class="badge bg-info">Major Elective</span>
+              {% elif course_id|slice:":4" == "BYSJ" %}
+              <span class="badge bg-warning">Graduation Project</span>
+              {% else %}
+              <span class="badge bg-secondary">Other</span>
+              {% endif %}
+              {% endwith %}
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Enrollment Count：</strong></td>
+            <td>{{ total_students }} students</td>
+          </tr>
+          <tr>
+            <td><strong>Recorded Grades：</strong></td>
+            <td>{{ scores|length }} students</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Grade Statistics Overview -->
+{% if scores %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0">
+            <i class="bi bi-bar-chart"></i>
+            Grade Distribution Statistics
+          </h6>
+      </div>
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-2">
+            <div class="border-end">
+              <h4 class="text-success">{{ excellent_count }}</h4>
+              <p class="text-muted mb-1">Excellent</p>
+              <small class="text-muted">(90+)</small>
+              <div class="progress mt-2" style="height: 8px">
+                <div
+                  class="progress-bar bg-success"
+                  style="width: {{ excellent_percent }}%"
+                ></div>
+              </div>
+              <small class="text-muted"
+                >{{ excellent_percent|floatformat:1 }}%</small
+              >
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="border-end">
+              <h4 class="text-primary">{{ good_count }}</h4>
+              <p class="text-muted mb-1">Good</p>
+              <small class="text-muted">(80-89)</small>
+              <div class="progress mt-2" style="height: 8px">
+                <div
+                  class="progress-bar bg-primary"
+                  style="width: {{ good_percent }}%"
+                ></div>
+              </div>
+              <small class="text-muted"
+                >{{ good_percent|floatformat:1 }}%</small
+              >
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="border-end">
+              <h4 class="text-info">{{ medium_count }}</h4>
+              <p class="text-muted mb-1">Average</p>
+              <small class="text-muted">(70-79)</small>
+              <div class="progress mt-2" style="height: 8px">
+                <div
+                  class="progress-bar bg-info"
+                  style="width: {{ medium_percent }}%"
+                ></div>
+              </div>
+              <small class="text-muted"
+                >{{ medium_percent|floatformat:1 }}%</small
+              >
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="border-end">
+              <h4 class="text-warning">{{ pass_count }}</h4>
+              <p class="text-muted mb-1">Pass</p>
+              <small class="text-muted">(60-69)</small>
+              <div class="progress mt-2" style="height: 8px">
+                <div
+                  class="progress-bar bg-warning"
+                  style="width: {{ pass_percent }}%"
+                ></div>
+              </div>
+              <small class="text-muted"
+                >{{ pass_percent|floatformat:1 }}%</small
+              >
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="border-end">
+              <h4 class="text-danger">{{ fail_count }}</h4>
+              <p class="text-muted mb-1">Fail</p>
+              <small class="text-muted">(<60)</small>
+              <div class="progress mt-2" style="height: 8px">
+                <div
+                  class="progress-bar bg-danger"
+                  style="width: {{ fail_percent }}%"
+                ></div>
+              </div>
+              <small class="text-muted"
+                >{{ fail_percent|floatformat:1 }}%</small
+              >
+            </div>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-secondary">{{ average_score|floatformat:1 }}</h4>
+            <p class="text-muted mb-1">Average Score</p>
+            <small class="text-muted">
+              {% if average_score >= 90 %} Excellent 
+              {% elif average_score >= 80 %} Good 
+              {% elif average_score >= 70 %} Average 
+              {% elif average_score >= 60 %} Pass 
+              {% else %} Fail 
+              {% endif %}
+            </small>
+            <div class="mt-2">
+              <span
+                class="badge {% if average_score >= 90 %}bg-success{% elif average_score >= 80 %}bg-primary{% elif average_score >= 70 %}bg-info{% elif average_score >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+              >
+                {{ average_score|floatformat:1 }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<!-- Course Selection Interface -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="bi bi-search"></i>
+      Select Course for Statistics
+    </h5>
+  </div>
+  <div class="card-body">
+    <form method="GET" class="row g-3">
+      <div class="col-md-8">
+        <select name="course_id" class="form-select" required>
+          <option value="">Select Course...</option>
+          {% for c in courses %}
+          <option value="{{ c.course_id }}">
+            {{ c.course_id }} - {{ c.course_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-bar-chart"></i> View Statistics
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Student Score List -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h6 class="mb-0">
+      <i class="bi bi-list-check"></i>
+      Student Score List
+    </h6>
+    {% if scores %}
+    <div class="btn-group btn-group-sm">
+      <a
+        href="{% url 'students:score_batch_input' %}?course_id={{ course.id }}"
+        class="btn btn-outline-primary"
+      >
+        <i class="bi bi-pencil-square"></i> Batch Input
+      </a>
+    </div>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    {% if scores %}
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Major</th>
+            <th>College</th>
+            <th>Score</th>
+            <th>Grade</th>
+            <th>Entry Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for score in scores %}
+          <tr>
+            <td>
+              {% if forloop.counter <= 3 %}
+              <span
+                class="badge {% if forloop.counter == 1 %}bg-warning{% elif forloop.counter == 2 %}bg-secondary{% else %}bg-dark{% endif %}"
+              >
+                {{ forloop.counter }}
+              </span>
+              {% else %} {{ forloop.counter }} {% endif %}
+            </td>
+            <td>{{ score.student.student_id }}</td>
+            <td>
+              <a
+                href="{% url 'students:student_transcript' score.student.student_id %}"
+                class="text-decoration-none"
+              >
+                {{ score.student.name }}
+              </a>
+            </td>
+            <td>{{ score.student.major }}</td>
+            <td>{{ score.student.college }}</td>
+            <td>
+              <span
+                class="badge {% if score.score >= 90 %}bg-success{% elif score.score >= 80 %}bg-primary{% elif score.score >= 70 %}bg-info{% elif score.score >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+              >
+                {{ score.score }}
+              </span>
+            </td>
+            <td>
+              {% if score.score >= 90 %}
+              <span class="text-success">Excellent</span>
+              {% elif score.score >= 80 %}
+              <span class="text-primary">Good</span>
+              {% elif score.score >= 70 %}
+              <span class="text-info">Average</span>
+              {% elif score.score >= 60 %}
+              <span class="text-warning">Pass</span>
+              {% else %}
+              <span class="text-danger">Fail</span>
+              {% endif %}
+            </td>
+            <td>{{ score.date }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+      <i class="bi bi-graph-up display-1 text-muted"></i>
+      <h4 class="mt-3 text-muted">No Score Data</h4>
+      <p class="text-muted">There are no score records for this course</p>
+      <div class="btn-group">
+        <a
+          href="{% url 'students:score_batch_input' %}?course_id={{ course.id }}"
+          class="btn btn-primary"
+        >
+          <i class="bi bi-input-cursor-text"></i> Batch Input Scores
+        </a>
+        <a href="{% url 'students:enrollment_manage' %}" class="btn btn-outline-primary">
+          <i class="bi bi-people"></i> Manage Enrollments
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 详细统计信息 -->
+{% if scores %}
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="bi bi-trophy"></i>
+    Score Ranking
+        </h6>
+      </div>
+      <div class="card-body">
+        {% if highest_score %}
+        <div class="mb-3">
+          <h6 class="text-success">Highest Score</h6>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ highest_score.student.name }}</strong>
+              <br />
+              <small class="text-muted"
+                >{{ highest_score.student.student_id }}</small
+              >
+            </div>
+            <span class="badge bg-success fs-6"
+              >{{ highest_score.score }}</span
+            >
+          </div>
+        </div>
+        {% endif %} {% if lowest_score %}
+        <div class="mb-3">
+          <h6 class="text-danger">Lowest Score</h6>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ lowest_score.student.name }}</strong>
+              <br />
+              <small class="text-muted"
+                >{{ lowest_score.student.student_id }}</small
+              >
+            </div>
+            <span
+              class="badge {% if lowest_score.score >= 60 %}bg-warning{% else %}bg-danger{% endif %} fs-6"
+            >
+              {{ lowest_score.score }}分
+            </span>
+          </div>
+        </div>
+        {% endif %}
+
+        <div>
+          <h6 class="text-info">Pass Rate</h6>
+          <div class="progress mb-2" style="height: 20px">
+            <div
+              class="progress-bar bg-success"
+              style="width: {{ pass_rate }}%"
+            >
+              {{ pass_rate|floatformat:1 }}%
+            </div>
+          </div>
+          <small class="text-muted"
+            >{{ pass_students }} students passed / {{ scores|length }} total</small
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="bi bi-collection"></i>
+          Major Distribution
+        </h6>
+      </div>
+      <div class="card-body">
+        {% for major_stat in major_stats %}
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <strong>{{ major_stat.major }}</strong>
+            <span class="badge bg-secondary">{{ major_stat.count }} students</span>
+          </div>
+          <div class="d-flex justify-content-between text-muted small">
+            <span>Avg Score: {{ major_stat.avg_score|floatformat:1 }}</span>
+            <span>Pass Rate: {{ major_stat.pass_rate|floatformat:1 }}%</span>
+          </div>
+          <div class="progress mt-1" style="height: 6px">
+            <div
+              class="progress-bar"
+              style="width: {{ major_stat.pass_rate }}%"
+            ></div>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">No major statistics data</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 操作按钮 -->
+<div class="row mt-4">
+  <div class="col-12 text-center">
+    <div class="btn-group">
+      <a
+        href="{% url 'students:course_edit' course.course_id %}"
+        class="btn btn-outline-primary"
+      >
+        <i class="bi bi-pencil"></i> Edit Course Info
+      </a>
+      <a
+        href="{% url 'students:score_batch_input' %}?course_id={{ course.course_id }}"
+        class="btn btn-outline-success"
+      >
+        <i class="bi bi-input-cursor-text"></i> Batch Input Scores
+      </a>
+      <a
+        href="{% url 'students:enrollment_manage' %}?course={{ course.course_id }}"
+        class="btn btn-outline-info"
+      >
+        <i class="bi bi-people"></i> Manage Enrollments
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- 当没有选择课程时的显示 -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="bi bi-search"></i>
+      Select Course for Statistics
+    </h5>
+  </div>
+  <div class="card-body">
+    <form method="GET" class="row g-3">
+      <div class="col-md-8">
+        <select name="course_id" class="form-select" required>
+          <option value="">Select Course...</option>
+          {% for c in courses %}
+          <option value="{{ c.course_id }}">
+            {{ c.course_id }} - {{ c.course_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-bar-chart"></i> View Statistics
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  @media print {
+    .btn,
+    .btn-group {
+      display: none !important;
+    }
+
+    .card {
+      border: 1px solid #dee2e6 !important;
+      box-shadow: none !important;
+    }
+
+    .card-header {
+      background-color: #f8f9fa !important;
+      color: #000 !important;
+    }
+
+    .badge {
+      border: 1px solid #000 !important;
+    }
+
+    .progress {
+      border: 1px solid #000 !important;
+    }
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,249 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Enrollment Management - Student Grade Management System{% endblock %}
+
+{% block page_title %}Enrollment Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                        <i class="bi bi-person"></i>
+                        Select Student
+                    </h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" id="studentForm">
+                    <div class="mb-3">
+                        <label for="student_id" class="form-label">Student</label>
+                        <select class="form-select" id="student_id" name="student_id" onchange="loadStudentCourses()">
+                            <option value="">Select a student</option>
+                            {% for student in students %}
+                            <option value="{{ student.student_id }}" 
+                                    {% if selected_student and selected_student.student_id == student.student_id %}selected{% endif %}>
+                                {{ student.student_id }} - {{ student.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+                
+                {% if selected_student %}
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> Current Student</h6>
+                    <p class="mb-1"><strong>Student ID:</strong> {{ selected_student.student_id }}</p>
+                    <p class="mb-1"><strong>Name:</strong> {{ selected_student.name }}</p>
+                    <p class="mb-1"><strong>Major:</strong> {{ selected_student.major }}</p>
+                    <p class="mb-0"><strong>College:</strong> {{ selected_student.college }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if selected_student %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                        <i class="bi bi-clipboard-check"></i>
+                        Enrolled Courses ({{ current_enrollments|length }})
+                    </h6>
+            </div>
+            <div class="card-body">
+                {% if current_enrollments %}
+                    <div class="list-group list-group-flush">
+                        {% for enrollment in current_enrollments %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>
+                                <h6 class="mb-1">{{ enrollment.course.course_name }}</h6>
+                                <small class="text-muted">{{ enrollment.course.course_id }} | {{ enrollment.course.credits }} credits</small>
+                            </div>
+                            <span class="badge bg-success">Enrolled</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">This student has not selected any courses yet</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-8">
+        {% if selected_student %}
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                        <i class="bi bi-book"></i>
+                        Available Courses
+                    </h5>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="selectAllCourses()">
+                        <i class="bi bi-check-all"></i> Select All
+                    </button>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="student_id" value="{{ selected_student.student_id }}">
+                    
+                    <div class="row">
+                        {% for course in available_courses %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input course-checkbox" type="checkbox" 
+                                               name="course_ids" value="{{ course.course_id }}" 
+                                               id="course_{{ course.course_id }}"
+                                               {% if course.course_id in enrolled_course_ids %}checked{% endif %}>
+                                        <label class="form-check-label w-100" for="course_{{ course.course_id }}">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1">{{ course.course_name }}</h6>
+                                                    <p class="mb-1 text-muted">{{ course.course_id }}</p>
+                                                    <small class="text-muted">{{ course.credits }} credits</small>
+                                                </div>
+                                                <div class="text-end">
+                                                    {% if course.course_id|slice:":4" == "JCKC" %}
+                                                        <span class="badge bg-primary">Basic</span>
+                                                    {% elif course.course_id|slice:":4" == "ZYBX" %}
+                                                        <span class="badge bg-success">Required</span>
+                                                    {% elif course.course_id|slice:":4" == "ZYXX" %}
+                                                        <span class="badge bg-warning">Elective</span>
+                                                    {% elif course.course_id|slice:":4" == "BYSJ" %}
+                                                        <span class="badge bg-info">Thesis</span>
+                                                    {% endif %}
+                                                    <br>
+                                                    <small class="text-muted">{{ course.enrollments.count }} students enrolled</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if available_courses %}
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <span class="text-muted">Selected <span id="selectedCount">{{ enrolled_course_ids|length }}</span> courses</span>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary me-2" onclick="clearAllCourses()">
+                                    <i class="bi bi-x-circle"></i> Clear Selection
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-lg"></i> Save Enrollments
+                                </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </form>
+                
+                {% if not available_courses %}
+                <div class="text-center py-5">
+                    <i class="bi bi-book display-1 text-muted"></i>
+                    <h4 class="mt-3 text-muted">No available courses</h4>
+                    <p class="text-muted">Please add course information first</p>
+                    <a href="{% url 'students:course_add' %}" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Add Course
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-person display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">Select a Student</h4>
+                <p class="text-muted">Select a student on the left to manage their enrollment information</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Enrollment Statistics -->
+{% if selected_student %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up"></i>
+                    Enrollment Statistics
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h5 class="text-primary">{{ total_credits }}</h5>
+                            <p class="text-muted mb-0">Total Credits</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h5 class="text-success">{{ required_courses }}</h5>
+                            <p class="text-muted mb-0">Required Courses</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h5 class="text-warning">{{ elective_courses }}</h5>
+                            <p class="text-muted mb-0">Elective Courses</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <h5 class="text-info">{{ current_enrollments|length }}</h5>
+                        <p class="text-muted mb-0">Enrolled Courses</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadStudentCourses() {
+    document.getElementById('studentForm').submit();
+}
+
+function selectAllCourses() {
+    const checkboxes = document.querySelectorAll('.course-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateSelectedCount();
+}
+
+function clearAllCourses() {
+    const checkboxes = document.querySelectorAll('.course-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checkedBoxes = document.querySelectorAll('.course-checkbox:checked');
+    document.getElementById('selectedCount').textContent = checkedBoxes.length;
+}
+
+// 监听复选框变化
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.course-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+});
+</script>
+{% endblock %}

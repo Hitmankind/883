@@ -1,0 +1,242 @@
+{% extends 'students/base.html' %}
+
+{% block title %}
+    {% if course %}Edit Course{% else %}Add Course{% endif %} - Student Grade Management System
+{% endblock %}
+
+{% block page_title %}
+    {% if course %}Edit Course Information{% else %}Add Course Information{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-book{% if not course %}-plus{% endif %}"></i>
+                    {% if course %}Edit Course Information{% else %}Add Course Information{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="course_id" class="form-label">Course ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="course_id" name="course_id" 
+                                   value="{{ course.course_id|default:'' }}" 
+                                   {% if course %}readonly{% endif %}
+                                   pattern="[A-Z]{4}[0-9]{4}" 
+                                   title="Course ID format: First 4 letters for course type, last 4 digits for sequence number"
+                                   placeholder="Example: ZYBX0001"
+                                   maxlength="8"
+                                   required>
+                            <div class="form-text">
+                                First 4 letters: JCKC(Basic Course), ZYBX(Major Required), ZYXX(Major Elective), BYSJ(Graduation Project)
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="course_name" class="form-label">Course Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="course_name" name="course_name" 
+                                   value="{{ course.course_name|default:'' }}" 
+                                   maxlength="20"
+                                   placeholder="Please enter course name"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="credits" class="form-label">Credits <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="credits" name="credits" 
+                                   value="{{ course.credits|default:'' }}" 
+                                   min="1" max="10" step="1"
+                                   placeholder="Please enter credits"
+                                   required>
+                            <div class="form-text">
+                                Credit range: 1-10 credits
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="course_type" class="form-label">Course Type</label>
+                            <select class="form-select" id="course_type" name="course_type" disabled>
+                                <option value="">Please enter course ID first</option>
+                                <option value="JCKC">Basic Course (JCKC)</option>
+                                <option value="ZYBX">Major Required (ZYBX)</option>
+                                <option value="ZYXX">Major Elective (ZYXX)</option>
+                                <option value="BYSJ">Graduation Project (BYSJ)</option>
+                            </select>
+                            <div class="form-text">
+                                Automatically recognized based on course ID
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'students:course_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                        <div>
+                            <button type="reset" class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-arrow-clockwise"></i> Reset
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-lg"></i> 
+                                {% if course %}Update{% else %}Add{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if course %}
+        <!-- 课程相关信息 -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                    <i class="bi bi-people"></i>
+                    Enrollment Information
+                </h6>
+                    <div class="card-body">
+                        <p class="mb-2">Enrolled Students: <strong>{{ course.enrollments.count }}</strong></p>
+                        <a href="{% url 'students:enrollment_manage' %}?course_id={{ course.course_id }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-gear"></i> Manage Enrollments
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                    <i class="bi bi-list-check"></i>
+                    Score Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">Score Records: <strong>{{ course.scores.count }}</strong></p>
+                <div class="btn-group btn-group-sm">
+                    <a href="{% url 'students:score_batch_input' %}?course_id={{ course.course_id }}" 
+                       class="btn btn-outline-warning">
+                        <i class="bi bi-input-cursor-text"></i> Input Scores
+                    </a>
+                    <a href="{% url 'students:course_statistics' %}?course_id={{ course.course_id }}" 
+                       class="btn btn-outline-info">
+                        <i class="bi bi-bar-chart"></i> View Statistics
+                    </a>
+                </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- 课程号格式说明 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Course ID Format Description
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Course Type Codes：</h6>
+                        <ul class="list-unstyled">
+                            <li><span class="badge bg-primary me-2">JCKC</span>Basic Course</li>
+                            <li><span class="badge bg-success me-2">ZYBX</span>Major Required</li>
+                            <li><span class="badge bg-warning me-2">ZYXX</span>Major Elective</li>
+                            <li><span class="badge bg-info me-2">BYSJ</span>Graduation Project</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Examples：</h6>
+                        <ul class="list-unstyled">
+                            <li><code>JCKC0001</code> - Advanced Mathematics</li>
+                            <li><code>ZYBX0001</code> - C Programming</li>
+                            <li><code>ZYXX0001</code> - Introduction to Artificial Intelligence</li>
+                            <li><code>BYSJ0001</code> - Graduation Project</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 课程号输入验证和自动识别类别
+document.getElementById('course_id').addEventListener('input', function(e) {
+    let value = e.target.value.toUpperCase();
+    
+    // 格式化输入：前4位字母，后4位数字
+    let letters = value.substring(0, 4).replace(/[^A-Z]/g, '');
+    let numbers = value.substring(4, 8).replace(/[^0-9]/g, '');
+    
+    // 限制长度
+    if (letters.length > 4) letters = letters.substring(0, 4);
+    if (numbers.length > 4) numbers = numbers.substring(0, 4);
+    
+    e.target.value = letters + numbers;
+    
+    // 自动识别课程类别
+    const courseTypeSelect = document.getElementById('course_type');
+    if (letters.length === 4) {
+        courseTypeSelect.disabled = false;
+        courseTypeSelect.value = letters;
+        
+        // Validate course type
+        const validTypes = ['JCKC', 'ZYBX', 'ZYXX', 'BYSJ'];
+        if (!validTypes.includes(letters)) {
+            e.target.setCustomValidity('Course type code must be one of: JCKC, ZYBX, ZYXX, BYSJ');
+        } else {
+            e.target.setCustomValidity('');
+        }
+    } else {
+        courseTypeSelect.disabled = true;
+        courseTypeSelect.value = '';
+    }
+});
+
+// 课程名称输入验证
+document.getElementById('course_name').addEventListener('input', function(e) {
+    let value = e.target.value;
+    // 移除特殊字符，保留中文、英文、数字和常见符号
+    value = value.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s\-\(\)]/g, '');
+    e.target.value = value;
+});
+
+// 学分输入验证
+document.getElementById('credits').addEventListener('input', function(e) {
+    let value = parseInt(e.target.value);
+    if (value < 1) {
+        e.target.value = 1;
+    } else if (value > 10) {
+        e.target.value = 10;
+    }
+});
+
+// 页面加载时初始化课程类别
+document.addEventListener('DOMContentLoaded', function() {
+    const courseId = document.getElementById('course_id').value;
+    if (courseId && courseId.length >= 4) {
+        const courseType = courseId.substring(0, 4);
+        const courseTypeSelect = document.getElementById('course_type');
+        courseTypeSelect.disabled = false;
+        courseTypeSelect.value = courseType;
+    }
+});
+</script>
+{% endblock %}

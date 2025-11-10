@@ -1,0 +1,228 @@
+{% extends 'students/base.html' %}
+
+{% block title %}学生查询 - 学生成绩管理系统{% endblock %}
+
+{% block page_title %}学生查询{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-search"></i>
+                    查询条件
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="GET">
+                    <div class="mb-3">
+                        <label for="search_type" class="form-label">查询类型</label>
+                        <select class="form-select" id="search_type" name="search_type" onchange="updatePlaceholder()">
+                            <option value="name" {% if search_type == 'name' %}selected{% endif %}>按姓名查询</option>
+                            <option value="major" {% if search_type == 'major' %}selected{% endif %}>按专业查询</option>
+                            <option value="college" {% if search_type == 'college' %}selected{% endif %}>按学院查询</option>
+                            <option value="student_id" {% if search_type == 'student_id' %}selected{% endif %}>按学号查询</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="query" class="form-label">查询内容</label>
+                        <input type="text" class="form-control" id="query" name="query" 
+                               value="{{ query }}" placeholder="请输入查询内容" required>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> 查询
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 快速查询 -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning"></i>
+                    快速查询
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="?search_type=major&query=计算机" class="btn btn-outline-primary btn-sm">
+                        计算机专业学生
+                    </a>
+                    <a href="?search_type=major&query=软件" class="btn btn-outline-primary btn-sm">
+                        软件专业学生
+                    </a>
+                    <a href="?search_type=college&query=计算机学院" class="btn btn-outline-success btn-sm">
+                        计算机学院学生
+                    </a>
+                    <a href="?search_type=college&query=信息学院" class="btn btn-outline-success btn-sm">
+                        信息学院学生
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        {% if students %}
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list"></i>
+                    查询结果
+                </h5>
+                <span class="badge bg-primary">共找到 {{ students|length }} 条记录</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>学号</th>
+                                <th>姓名</th>
+                                <th>性别</th>
+                                <th>专业</th>
+                                <th>学院</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td>{{ student.student_id }}</td>
+                                <td>{{ student.name }}</td>
+                                <td>{{ student.gender }}</td>
+                                <td>{{ student.major }}</td>
+                                <td>{{ student.college }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'students:student_edit' student.student_id %}" 
+                                           class="btn btn-outline-primary" title="编辑">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'students:student_transcript' student.student_id %}" 
+                                           class="btn btn-outline-info" title="成绩单">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% elif query %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-search display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">未找到匹配的学生</h4>
+                <p class="text-muted">
+                    没有找到与"{{ query }}"匹配的学生信息，请尝试其他查询条件
+                </p>
+                <button type="button" class="btn btn-primary" onclick="clearSearch()">
+                    <i class="bi bi-arrow-clockwise"></i> 重新查询
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-search display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">请输入查询条件</h4>
+                <p class="text-muted">
+                    在左侧选择查询类型并输入查询内容，或使用快速查询按钮
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 查询统计 -->
+{% if students %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up"></i>
+                    查询统计
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    {% if search_type == 'major' %}
+                    <div class="col-md-12">
+                        <h5 class="text-primary">{{ students|length }}</h5>
+                        <p class="text-muted mb-0">{{ query }} 专业学生总数</p>
+                    </div>
+                    {% elif search_type == 'college' %}
+                    <div class="col-md-12">
+                        <h5 class="text-success">{{ students|length }}</h5>
+                        <p class="text-muted mb-0">{{ query }} 学生总数</p>
+                    </div>
+                    {% else %}
+                    <div class="col-md-4">
+                        <h5 class="text-info">{{ students|length }}</h5>
+                        <p class="text-muted mb-0">匹配记录数</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="text-warning">{{ students.0.major|default:'-' }}</h5>
+                        <p class="text-muted mb-0">专业</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="text-success">{{ students.0.college|default:'-' }}</h5>
+                        <p class="text-muted mb-0">学院</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updatePlaceholder() {
+    const searchType = document.getElementById('search_type').value;
+    const queryInput = document.getElementById('query');
+    
+    const placeholders = {
+        'name': '请输入学生姓名',
+        'major': '请输入专业名称',
+        'college': '请输入学院名称',
+        'student_id': '请输入学号'
+    };
+    
+    queryInput.placeholder = placeholders[searchType] || '请输入查询内容';
+    queryInput.focus();
+}
+
+function clearSearch() {
+    document.getElementById('query').value = '';
+    document.getElementById('query').focus();
+}
+
+// 页面加载时设置正确的占位符
+document.addEventListener('DOMContentLoaded', function() {
+    updatePlaceholder();
+});
+
+// 回车键快速查询
+document.getElementById('query').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        this.form.submit();
+    }
+});
+</script>
+{% endblock %}

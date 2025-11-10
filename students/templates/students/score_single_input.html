@@ -1,0 +1,448 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Single Score Input - Student Grade Management System{% endblock %}
+
+{% block page_title %}Single Score Input{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 左侧：学生选择 -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-person"></i>
+                    Select Student
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="student_select" class="form-label">Student <span class="text-danger">*</span></label>
+                    <select id="student_select" class="form-select" onchange="loadStudentCourses()">
+                        <option value="">Select student...</option>
+                        {% for student in students %}
+                        <option value="{{ student.student_id }}" 
+                                data-name="{{ student.name }}"
+                                data-major="{{ student.major }}"
+                                data-college="{{ student.college }}">
+                            {{ student.student_id }} - {{ student.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- 学生信息显示 -->
+                <div id="student_info" class="alert alert-info d-none">
+                    <h6 id="student_name"></h6>
+                    <p class="mb-1">Student ID: <span id="student_id_display"></span></p>
+                    <p class="mb-1">Major: <span id="student_major"></span></p>
+                    <p class="mb-0">College: <span id="student_college"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右侧：课程选择和成绩录入 -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-book"></i>
+                    Select Course and Input Score
+                </h6>
+            </div>
+            <div class="card-body">
+                <!-- 提示信息 -->
+                <div id="no_student_selected" class="text-center py-5">
+                    <i class="bi bi-arrow-left display-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">Please select a student first</h5>
+                    <p class="text-muted">The student's enrolled courses will be displayed after selection</p>
+                </div>
+                
+                <!-- 成绩录入表单 -->
+                <div id="score_input_form" class="d-none">
+                    <form method="POST" id="scoreForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="selected_student_id" name="student_id" value="">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="course_select" class="form-label">Select Course <span class="text-danger">*</span></label>
+                                    <select id="course_select" name="course_id" class="form-select" required onchange="updateCourseInfo()">
+                                        <option value="">Select course...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="score_input" class="form-label">Score <span class="text-danger">*</span></label>
+                                    <input type="number" 
+                                           id="score_input" 
+                                           name="score" 
+                                           class="form-control" 
+                                           min="0" 
+                                           max="100" 
+                                           step="0.1"
+                                           placeholder="Enter score (0-100)"
+                                           required
+                                           onchange="updateScoreLevel()">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 课程信息显示 -->
+                        <div id="course_info" class="alert alert-light d-none">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Course Name:</strong> <span id="course_name_display"></span></p>
+                                    <p class="mb-0"><strong>Credits:</strong> <span id="course_credits_display"></span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Course Type:</strong><span id="course_type_display"></span></p>
+                                    <p class="mb-0"><strong>Current Score:</strong><span id="existing_score_display">Not Entered</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 成绩等级显示 -->
+                        <div id="score_level_display" class="alert alert-secondary d-none">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <strong>成绩等级：</strong><span id="score_level_text">-</span>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <span id="score_level_badge"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                <i class="bi bi-arrow-clockwise"></i> Reset
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Enter Score
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Loading indicator -->
+                <div id="loading_courses" class="text-center py-3 d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading course information...</p>
+                </div>
+                
+                <!-- No courses alert -->
+                <div id="no_courses" class="text-center py-5 d-none">
+                    <i class="bi bi-exclamation-circle display-1 text-warning"></i>
+                    <h5 class="mt-3 text-warning">No course enrollments found</h5>
+                    <p class="text-muted">Please add course enrollments for this student first</p>
+                    <a href="{% url 'students:enrollment_manage' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Manage Enrollments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Entry Records -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history"></i>
+                    Recent Entry Records
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if recent_scores %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Entry Time</th>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Course</th>
+                                <th>Score</th>
+                                <th>Grade</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for score in recent_scores %}
+                            <tr>
+                                <td>{{ score.date|date:"m-d" }}</td>
+                                <td>{{ score.student.student_id }}</td>
+                                <td>{{ score.student.name }}</td>
+                                <td>{{ score.course.course_name }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if score.score >= 90 %}bg-success
+                                        {% elif score.score >= 80 %}bg-primary
+                                        {% elif score.score >= 70 %}bg-info
+                                        {% elif score.score >= 60 %}bg-warning
+                                        {% else %}bg-danger
+                                        {% endif %}">
+                                        {{ score.score }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if score.score >= 90 %}Excellent
+                                    {% elif score.score >= 80 %}Good
+                                    {% elif score.score >= 70 %}Average
+                                    {% elif score.score >= 60 %}Pass
+                                    {% else %}Fail
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'students:score_edit' score.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-inbox text-muted"></i>
+                    <p class="text-muted mb-0">No records found</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 全局变量
+let studentCourses = {};
+let courseDetails = {};
+
+// 加载学生的选课信息
+function loadStudentCourses() {
+    const studentSelect = document.getElementById('student_select');
+    const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+    
+    if (!studentSelect.value) {
+        hideAllSections();
+        return;
+    }
+    
+    // 显示学生信息
+    showStudentInfo(selectedOption);
+    
+    // 显示加载状态
+    showLoadingCourses();
+    
+    // 发送AJAX请求获取学生的选课信息
+    fetch(`/api/student-courses/${studentSelect.value}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                studentCourses = data.courses;
+                courseDetails = data.course_details;
+                populateCourseSelect(data.courses);
+                showScoreInputForm();
+            } else {
+                showNoCourses();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNoCourses();
+        });
+}
+
+// 显示学生信息
+function showStudentInfo(selectedOption) {
+    document.getElementById('student_name').textContent = selectedOption.dataset.name;
+    document.getElementById('student_id_display').textContent = selectedOption.value;
+    document.getElementById('student_major').textContent = selectedOption.dataset.major;
+    document.getElementById('student_college').textContent = selectedOption.dataset.college;
+    document.getElementById('student_info').classList.remove('d-none');
+    document.getElementById('selected_student_id').value = selectedOption.value;
+}
+
+// Populate course select
+    function populateCourseSelect(courses) {
+        const courseSelect = document.getElementById('course_select');
+        courseSelect.innerHTML = '<option value="">Please select course...</option>';
+    
+    courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.course_id;
+        option.textContent = `${course.course_id} - ${course.course_name}`;
+        option.dataset.credits = course.credits;
+        option.dataset.existingScore = course.existing_score || '';
+        courseSelect.appendChild(option);
+    });
+}
+
+// 更新课程信息显示
+function updateCourseInfo() {
+    const courseSelect = document.getElementById('course_select');
+    const selectedOption = courseSelect.options[courseSelect.selectedIndex];
+    
+    if (!courseSelect.value) {
+        document.getElementById('course_info').classList.add('d-none');
+        return;
+    }
+    
+    const courseId = courseSelect.value;
+    const courseDetail = courseDetails[courseId];
+    
+    if (courseDetail) {
+        document.getElementById('course_name_display').textContent = courseDetail.course_name;
+        document.getElementById('course_credits_display').textContent = courseDetail.credits;
+        
+        // Course type display
+        let courseType = 'Other';
+        let badgeClass = 'bg-secondary';
+        if (courseId.startsWith('JCKC')) {
+            courseType = 'Basic Course';
+            badgeClass = 'bg-primary';
+        } else if (courseId.startsWith('ZYBX')) {
+            courseType = 'Required Course';
+            badgeClass = 'bg-success';
+        } else if (courseId.startsWith('ZYXX')) {
+            courseType = 'Elective Course';
+            badgeClass = 'bg-info';
+        } else if (courseId.startsWith('BYSJ')) {
+            courseType = 'Thesis';
+            badgeClass = 'bg-warning';
+        }
+        
+        document.getElementById('course_type_display').innerHTML = `<span class="badge ${badgeClass}">${courseType}</span>`;
+        
+        // Existing score display
+        const existingScore = selectedOption.dataset.existingScore;
+        if (existingScore) {
+            document.getElementById('existing_score_display').innerHTML = `<span class="badge bg-info">${existingScore}</span>`;
+            document.getElementById('score_input').value = existingScore;
+            updateScoreLevel();
+        } else {
+            document.getElementById('existing_score_display').textContent = 'Not Entered';
+            document.getElementById('score_input').value = '';
+            hideScoreLevel();
+        }
+        
+        document.getElementById('course_info').classList.remove('d-none');
+    }
+}
+
+// Update score level display
+    function updateScoreLevel() {
+        const scoreInput = document.getElementById('score_input');
+        const score = parseFloat(scoreInput.value);
+        
+        if (isNaN(score) || score < 0 || score > 100) {
+            hideScoreLevel();
+            return;
+        }
+        
+        let level, badgeClass;
+        if (score >= 90) {
+            level = 'Excellent';
+            badgeClass = 'bg-success';
+        } else if (score >= 80) {
+            level = 'Good';
+            badgeClass = 'bg-primary';
+        } else if (score >= 70) {
+            level = 'Average';
+            badgeClass = 'bg-info';
+        } else if (score >= 60) {
+            level = 'Pass';
+            badgeClass = 'bg-warning';
+        } else {
+            level = 'Fail';
+            badgeClass = 'bg-danger';
+        }
+        
+        document.getElementById('score_level_text').textContent = level;
+        document.getElementById('score_level_badge').innerHTML = `<span class="badge ${badgeClass}">${score}</span>`;
+    document.getElementById('score_level_display').classList.remove('d-none');
+}
+
+// 隐藏成绩等级显示
+function hideScoreLevel() {
+    document.getElementById('score_level_display').classList.add('d-none');
+}
+
+// 显示各种状态
+function hideAllSections() {
+    document.getElementById('student_info').classList.add('d-none');
+    document.getElementById('no_student_selected').classList.remove('d-none');
+    document.getElementById('score_input_form').classList.add('d-none');
+    document.getElementById('loading_courses').classList.add('d-none');
+    document.getElementById('no_courses').classList.add('d-none');
+}
+
+function showLoadingCourses() {
+    document.getElementById('no_student_selected').classList.add('d-none');
+    document.getElementById('score_input_form').classList.add('d-none');
+    document.getElementById('no_courses').classList.add('d-none');
+    document.getElementById('loading_courses').classList.remove('d-none');
+}
+
+function showScoreInputForm() {
+    document.getElementById('no_student_selected').classList.add('d-none');
+    document.getElementById('loading_courses').classList.add('d-none');
+    document.getElementById('no_courses').classList.add('d-none');
+    document.getElementById('score_input_form').classList.remove('d-none');
+}
+
+function showNoCourses() {
+    document.getElementById('no_student_selected').classList.add('d-none');
+    document.getElementById('loading_courses').classList.add('d-none');
+    document.getElementById('score_input_form').classList.add('d-none');
+    document.getElementById('no_courses').classList.remove('d-none');
+}
+
+// Reset form
+function resetForm() {
+    document.getElementById('student_select').value = '';
+    document.getElementById('scoreForm').reset();
+    hideAllSections();
+    hideScoreLevel();
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+        // Add real-time validation for score input
+        const scoreInput = document.getElementById('score_input');
+        scoreInput.addEventListener('input', updateScoreLevel);
+        
+        // Form submission validation
+        document.getElementById('scoreForm').addEventListener('submit', function(e) {
+            const studentId = document.getElementById('selected_student_id').value;
+            const courseId = document.getElementById('course_select').value;
+            const score = document.getElementById('score_input').value;
+            
+            if (!studentId || !courseId || !score) {
+                e.preventDefault();
+                alert('Please complete all required fields!');
+                return false;
+            }
+            
+            const scoreValue = parseFloat(score);
+            if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > 100) {
+                e.preventDefault();
+                alert('Score must be between 0 and 100!');
+                return false;
+            }
+        });
+    });
+</script>
+{% endblock %}

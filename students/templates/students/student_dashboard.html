@@ -1,0 +1,99 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Student Dashboard - Student Grade Management System{% endblock %}
+
+{% block page_title %}Student Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-3 text-center">
+            <div class="rounded-circle bg-primary/10 w-32 h-32 mx-auto flex items-center justify-center">
+              <i class="bi bi-person-fill display-3 text-primary"></i>
+            </div>
+          </div>
+          <div class="col-md-9">
+            {% if request.user.student %}
+            <h2 class="card-title">Welcome back, {{ request.user.student.name }}</h2>
+            <div class="row mt-3">
+              <div class="col-md-4">
+                <p class="text-muted mb-0">Student ID</p>
+                <p class="font-weight-medium">{{ request.user.student.student_id }}</p>
+              </div>
+              <div class="col-md-4">
+                <p class="text-muted mb-0">Major</p>
+                <p class="font-weight-medium">{{ request.user.student.major }}</p>
+              </div>
+              <div class="col-md-4">
+                <p class="text-muted mb-0">College</p>
+                <p class="font-weight-medium">{{ request.user.student.college }}</p>
+              </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+              <p>Your account is not associated with student information yet. Please contact the administrator.</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-file-text-fill text-primary me-2"></i>My Transcript
+        </h5>
+      </div>
+      <div class="card-body">
+        <p class="mb-4">View all your course grades and statistical information</p>
+        <a href="{% url 'students:student_transcript' request.user.student.student_id %}" class="btn btn-primary w-100">
+          <i class="bi bi-eye-fill me-2"></i>View Full Transcript
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-book-fill text-success me-2"></i>My Courses
+        </h5>
+      </div>
+      <div class="card-body">
+        <p class="mb-4">View your enrolled course information</p>
+        <a href="#" class="btn btn-success w-100" onclick="alert('Course list feature under development'); return false;">
+          <i class="bi bi-list-ul me-2"></i>View My Courses
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if request.user.student %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-bar-chart-fill text-info me-2"></i>Grade Overview
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <p>Grade statistics feature under development, coming soon...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

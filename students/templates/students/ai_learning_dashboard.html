@@ -1,0 +1,601 @@
+{% extends 'students/base.html' %}
+
+{% block title %}AI Learning Analytics - WiseMentor{% endblock %}
+
+{% block page_title %}
+<div class="d-flex align-items-center">
+    <i class="bi bi-brain-fill text-primary me-3"></i>
+    AI Learning Analytics Dashboard
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- 概览卡片 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-gradient-to-r from-primary to-blue-600 text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-800">Total Students</h6>
+                        <h3 class="font-bold" id="total-students">152</h3>
+                    </div>
+                    <i class="bi bi-people-fill display-3 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-gradient-to-r from-success to-green-600 text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-800">Average Score</h6>
+                        <h3 class="font-bold">78.5</h3>
+                    </div>
+                    <i class="bi bi-graph-up-fill display-3 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-gradient-to-r from-warning to-amber-600 text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-800">Students at Risk</h6>
+                        <h3 class="font-bold" id="students-at-risk">7</h3>
+                    </div>
+                    <i class="bi bi-exclamation-triangle-fill display-3 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-800">Recommendations</h6>
+                        <h3 class="font-bold">24</h3>
+                    </div>
+                    <i class="bi bi-lightbulb-fill display-3 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 主要内容区域 -->
+<div class="row">
+    <!-- 左侧面板：学生学习风险预警 -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-exclamation text-warning me-2"></i>
+                        Learning Risk Alerts
+                    </h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" id="refresh-alerts">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="alert-list" id="alert-list">
+                    <!-- 预警项 -->
+                    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-exclamation-circle text-danger fs-4"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="alert-heading font-bold">Critical Alert</h6>
+                                <p><strong>Student ID: 20230014</strong> - <strong>Zhang Wei</strong></p>
+                                <p class="mb-0">Significant difficulty with 'Functions' chapter. Assignment accuracy rate 30% below class average. <span class="badge bg-danger">High Risk</span></p>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-danger me-2">View Details</button>
+                                    <button class="btn btn-sm btn-outline-primary">Assign Resources</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    
+                    <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="alert-heading font-bold">Warning</h6>
+                                <p><strong>Student ID: 20230028</strong> - <strong>Li Mei</strong></p>
+                                <p class="mb-0">Declining performance trend in Mathematics. Three consecutive assignments with scores below 60. <span class="badge bg-warning">Medium Risk</span></p>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-danger me-2">View Details</button>
+                                    <button class="btn btn-sm btn-outline-primary">Assign Resources</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    
+                    <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-info-circle text-info fs-4"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="alert-heading font-bold">Attention Needed</h6>
+                                <p><strong>Student ID: 20230045</strong> - <strong>Wang Hao</strong></p>
+                                <p class="mb-0">Low participation in online discussions. Course engagement below threshold. <span class="badge bg-info">Low Risk</span></p>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-danger me-2">View Details</button>
+                                    <button class="btn btn-sm btn-outline-primary">Assign Resources</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                </div>
+                <button class="btn btn-outline-primary btn-sm w-100" id="load-more-alerts">
+                    <i class="bi bi-chevron-down"></i> Load More Alerts
+                </button>
+            </div>
+        </div>
+        
+        <!-- 学习趋势分析图表 -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-trend-up text-primary me-2"></i>
+                    Learning Trend Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <select class="form-select" id="select-course">
+                            <option value="all">All Courses</option>
+                            <option value="CS101">CS101 - Introduction to Computer Science</option>
+                            <option value="MATH201">MATH201 - Advanced Mathematics</option>
+                            <option value="ENG102">ENG102 - English Composition</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="select-timeframe">
+                            <option value="month">Last Month</option>
+                            <option value="quarter" selected>Last Quarter</option>
+                            <option value="semester">Current Semester</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <canvas id="learning-trend-chart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右侧面板：个性化建议和资源推荐 -->
+    <div class="col-md-4">
+        <!-- 知识掌握热图 -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-thermometer-half text-danger me-2"></i>
+                    Knowledge Mastery Heatmap
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="knowledge-heatmap" style="height: 200px;">
+                    <!-- 简单的热图表示 -->
+                    <div class="row g-1">
+                        <div class="col-2">
+                            <div class="bg-danger rounded p-1 text-center text-white">
+                                <small>Funct.</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-warning rounded p-1 text-center text-white">
+                                <small>Algebra</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-success rounded p-1 text-center text-white">
+                                <small>Calc.</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-info rounded p-1 text-center text-white">
+                                <small>Stats</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-secondary rounded p-1 text-center text-white">
+                                <small>Geo.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-1 mt-1">
+                        <div class="col-2">
+                            <div class="bg-warning rounded p-1 text-center text-white">
+                                <small>Alg.</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-success rounded p-1 text-center text-white">
+                                <small>Data</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-danger rounded p-1 text-center text-white">
+                                <small>OOP</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-info rounded p-1 text-center text-white">
+                                <small>DB</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-success rounded p-1 text-center text-white">
+                                <small>Net.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-1 mt-1">
+                        <div class="col-2">
+                            <div class="bg-info rounded p-1 text-center text-white">
+                                <small>Gram.</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-success rounded p-1 text-center text-white">
+                                <small>Read.</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-warning rounded p-1 text-center text-white">
+                                <small>Write</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-info rounded p-1 text-center text-white">
+                                <small>List.</small>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="bg-success rounded p-1 text-center text-white">
+                                <small>Speak</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between text-xs">
+                            <div class="d-flex align-items-center">
+                                <div class="w-3 h-3 bg-success rounded me-1"></div>
+                                <span>Mastered</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="w-3 h-3 bg-info rounded me-1"></div>
+                                <span>Proficient</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="w-3 h-3 bg-warning rounded me-1"></div>
+                                <span>Developing</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="w-3 h-3 bg-danger rounded me-1"></div>
+                                <span>Needs Help</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 个性化教学建议 -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb text-yellow-500 me-2"></i>
+                    AI Teaching Recommendations
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="recommendation-list" id="recommendation-list">
+                    <div class="border rounded-lg p-3 mb-3 bg-light">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-primary">Math201</span>
+                            <span class="text-xs text-muted">AI Generated</span>
+                        </div>
+                        <p class="mb-2 text-sm">Focus on Student Li Mei (ID: 20230028) who performed poorly on Chapter 3 quiz.</p>
+                        <p class="text-xs text-muted mb-2">Suggestion: Assign the Chapter 3 review video and targeted practice exercises.</p>
+                        <button class="btn btn-sm btn-primary">Implement</button>
+                    </div>
+                    
+                    <div class="border rounded-lg p-3 mb-3 bg-light">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-info">CS101</span>
+                            <span class="text-xs text-muted">AI Generated</span>
+                        </div>
+                        <p class="mb-2 text-sm">The class shows weak understanding of OOP concepts. Consider additional teaching sessions.</p>
+                        <p class="text-xs text-muted mb-2">Suggestion: Schedule a review session and provide interactive coding exercises.</p>
+                        <button class="btn btn-sm btn-primary">Implement</button>
+                    </div>
+                    
+                    <div class="border rounded-lg p-3 mb-3 bg-light">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-success">ENG102</span>
+                            <span class="text-xs text-muted">AI Generated</span>
+                        </div>
+                        <p class="mb-2 text-sm">Student Wang Hao needs help with writing structure and organization.</p>
+                        <p class="text-xs text-muted mb-2">Suggestion: Provide writing templates and schedule a one-on-one session.</p>
+                        <button class="btn btn-sm btn-primary">Implement</button>
+                    </div>
+                </div>
+                <button class="btn btn-outline-primary btn-sm w-100">
+                    <i class="bi bi-plus-circle"></i> Generate More Recommendations
+                </button>
+            </div>
+        </div>
+        
+        <!-- AI资源推荐 -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-book-fill text-green-600 me-2"></i>
+                    Recommended Learning Resources
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-3 pb-3 border-b">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-file-earmark-play text-primary fs-3"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-0">Functions Mastery Video Series</h6>
+                                <p class="text-xs text-muted">For students struggling with functions concepts</p>
+                                <button class="btn btn-xs btn-outline-primary mt-1">Assign to Students</button>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="mb-3 pb-3 border-b">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-file-earmark-text text-secondary fs-3"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-0">OOP Concepts Practice Workbook</h6>
+                                <p class="text-xs text-muted">Interactive exercises for CS101 students</p>
+                                <button class="btn btn-xs btn-outline-primary mt-1">Assign to Students</button>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-youtube text-danger fs-3"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-0">Mathematics Problem-Solving Techniques</h6>
+                                <p class="text-xs text-muted">Video tutorials for improving problem-solving skills</p>
+                                <button class="btn btn-xs btn-outline-primary mt-1">Assign to Students</button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 学生详细信息模态框 -->
+<div class="modal fade" id="studentDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient-to-r from-primary to-blue-600 text-white">
+                <h5 class="modal-title">Student Learning Profile</h5>
+                <button type="button" class="btn-close text-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="text-center mb-3">
+                                    <div class="w-24 h-24 bg-primary text-white rounded-full mx-auto flex items-center justify-center">
+                                        <i class="bi bi-person fs-4"></i>
+                                    </div>
+                                    <h5 class="mt-3">Zhang Wei</h5>
+                                    <p class="text-muted">Student ID: 20230014</p>
+                                </div>
+                                <div class="border-t pt-3">
+                                    <p class="text-sm"><strong>Major:</strong> Computer Science</p>
+                                    <p class="text-sm"><strong>College:</strong> School of Computing</p>
+                                    <p class="text-sm"><strong>Year:</strong> Sophomore</p>
+                                    <p class="text-sm"><strong>GPA:</strong> 2.7 (Last Semester)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="mb-4">
+                            <h6><i class="bi bi-bar-chart text-primary me-2"></i> Performance Trend</h6>
+                            <canvas id="student-performance-chart" height="150"></canvas>
+                        </div>
+                        <div class="mb-4">
+                            <h6><i class="bi bi-exclamation-triangle text-warning me-2"></i> Learning Difficulties</h6>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded">
+                                <ul class="text-sm list-disc pl-4">
+                                    <li>Functions and calculus concepts (65% below class average)</li>
+                                    <li>Problem-solving approaches in Mathematics</li>
+                                    <li>Consistency in homework submissions</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h6><i class="bi bi-lightbulb text-yellow-500 me-2"></i> AI Recommendations</h6>
+                            <div class="bg-info bg-opacity-10 p-3 rounded">
+                                <ul class="text-sm list-disc pl-4">
+                                    <li>Schedule weekly tutoring sessions focused on functions</li>
+                                    <li>Assign supplementary practice problems from Chapter 4</li>
+                                    <li>Provide step-by-step video tutorials for common problem types</li>
+                                    <li>Monitor progress closely over the next 3 weeks</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Generate Intervention Plan</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 学习趋势图表
+const ctx = document.getElementById('learning-trend-chart').getContext('2d');
+const learningTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8', 'Week 9', 'Week 10', 'Week 11', 'Week 12'],
+        datasets: [
+            {
+                label: 'Class Average Score',
+                data: [72, 73, 75, 74, 76, 77, 75, 78, 79, 78, 80, 82],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Students at Risk',
+                data: [12, 10, 9, 8, 11, 10, 9, 8, 7, 7, 6, 5],
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.4,
+                fill: true,
+                yAxisID: 'y1'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Score'
+                },
+                min: 0,
+                max: 100
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'Number of Students'
+                },
+                min: 0,
+                max: 20,
+                grid: {
+                    drawOnChartArea: false,
+                },
+            },
+        }
+    }
+});
+
+// 学生个人表现图表
+const studentCtx = document.getElementById('student-performance-chart').getContext('2d');
+const studentPerformanceChart = new Chart(studentCtx, {
+    type: 'line',
+    data: {
+        labels: ['Exam 1', 'Quiz 1', 'Midterm', 'Quiz 2', 'Lab', 'Quiz 3', 'Exam 2'],
+        datasets: [
+            {
+                label: 'Zhang Wei',
+                data: [78, 65, 58, 45, 60, 42, 35],
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Class Average',
+                data: [75, 72, 70, 73, 74, 71, 72],
+                borderColor: 'rgb(54, 162, 235)',
+                borderDash: [5, 5],
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+
+// 模拟AI实时分析效果
+setInterval(() => {
+    const alerts = document.querySelectorAll('#alert-list .alert');
+    if (alerts.length > 0) {
+        const randomAlert = alerts[Math.floor(Math.random() * alerts.length)];
+        randomAlert.classList.add('alert-success');
+        setTimeout(() => {
+            randomAlert.classList.remove('alert-success');
+        }, 1000);
+    }
+}, 5000);
+
+// 绑定预警项的详情按钮
+const detailButtons = document.querySelectorAll('.alert .btn-danger');
+detailButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const modal = new bootstrap.Modal(document.getElementById('studentDetailModal'));
+        modal.show();
+    });
+});
+
+// 刷新预警功能
+const refreshButton = document.getElementById('refresh-alerts');
+refreshButton.addEventListener('click', () => {
+    refreshButton.innerHTML = '<i class="bi bi-arrow-clockwise fa-spin"></i> Refreshing...';
+    setTimeout(() => {
+        refreshButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh';
+        // 这里可以添加实际的刷新逻辑
+    }, 1500);
+});
+</script>
+{% endblock %}

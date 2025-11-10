@@ -1,0 +1,218 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Course List - Student Grade Management System{% endblock %}
+
+{% block page_title %}Course List{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <a href="{% url 'students:course_add' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add Course
+            </a>
+    </div>
+    <div class="col-md-6">
+        <form method="GET" class="d-flex">
+            <input type="text" name="search" class="form-control me-2" 
+                   placeholder="Search by course ID or name..." 
+                   value="{{ request.GET.search }}">
+            <button type="submit" class="btn btn-outline-success">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if courses %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Course ID</th>
+                        <th>Course Name</th>
+                        <th>Credits</th>
+                        <th>Course Type</th>
+                        <th>Enrollment Count</th>
+                        <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                        <tr>
+                            <td>{{ course.course_id }}</td>
+                            <td>{{ course.course_name }}</td>
+                            <td>{{ course.credits }}</td>
+                            <td>
+                                {% if course.course_id|slice:":4" == "JCKC" %}
+                                    <span class="badge bg-primary">Basic Course</span>
+                                {% elif course.course_id|slice:":4" == "ZYBX" %}
+                                    <span class="badge bg-success">Major Required</span>
+                                {% elif course.course_id|slice:":4" == "ZYXX" %}
+                                    <span class="badge bg-warning">Major Elective</span>
+                                {% elif course.course_id|slice:":4" == "BYSJ" %}
+                                    <span class="badge bg-info">Graduation Project</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Other</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark">{{ course.enrollments.count }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'students:course_edit' course.course_id %}" 
+                                       class="btn btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'students:course_statistics' %}?course_id={{ course.course_id }}" 
+                                       class="btn btn-outline-info" title="Statistics">
+                                        <i class="bi bi-bar-chart"></i>
+                                    </a>
+                                    <a href="{% url 'students:score_batch_input' %}?course_id={{ course.course_id }}" 
+                                       class="btn btn-outline-warning" title="Input Grades">
+                                        <i class="bi bi-input-cursor-text"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" 
+                                            onclick="confirmDelete('{{ course.course_id }}', '{{ course.course_name }}')" 
+                                            title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            {% if is_paginated %}
+            <nav aria-label="Course List Pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-book display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">No course data available</h4>
+                <p class="text-muted">Click the "Add Course" button above to start adding course information</p>
+                <a href="{% url 'students:course_add' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Add Course
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 课程统计 -->
+{% if courses %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                        <i class="bi bi-graph-up"></i>
+                        Course Statistics
+                    </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h5 class="text-primary">{{ jckc_count }}</h5>
+                            <p class="text-muted mb-0">Basic Courses</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h5 class="text-success">{{ zybx_count }}</h5>
+                            <p class="text-muted mb-0">Major Required</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h5 class="text-warning">{{ zyxx_count }}</h5>
+                            <p class="text-muted mb-0">Major Elective</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <h5 class="text-info">{{ bysj_count }}</h5>
+                        <p class="text-muted mb-0">Graduation Projects</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete course <strong id="courseName"></strong> (<strong id="courseId"></strong>)?</p>
+                <p class="text-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Note: Deleting the course will also delete all its grade records and enrollments!
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(courseId, courseName) {
+    document.getElementById('courseName').textContent = courseName;
+    document.getElementById('deleteForm').action = '/students/courses/delete/' + courseId + '/';
+    
+    var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

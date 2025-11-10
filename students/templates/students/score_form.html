@@ -1,0 +1,229 @@
+{% extends 'students/base.html' %}
+
+{% block title %}编辑成绩 - 学生成绩管理系统{% endblock %}
+
+{% block page_title %}编辑成绩{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-pencil"></i>
+                    编辑成绩信息
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <!-- 学生和课程信息（只读） -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">学生信息</label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light">
+                                    <strong>{{ score.student.student_id }}</strong> - {{ score.student.name }}
+                                    <br>
+                                    <small class="text-muted">{{ score.student.major }} | {{ score.student.college }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">课程信息</label>
+                                <div class="form-control-plaintext border rounded p-2 bg-light">
+                                    <strong>{{ score.course.course_id }}</strong> - {{ score.course.course_name }}
+                                    <br>
+                                    <small class="text-muted">{{ score.course.credits }}学分</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="score" class="form-label">成绩 <span class="text-danger">*</span></label>
+                                <input type="number" 
+                                       name="score" 
+                                       id="score" 
+                                       class="form-control" 
+                                       min="0" 
+                                       max="100" 
+                                       step="0.1"
+                                       value="{{ form.score.value|default:score.score }}"
+                                       placeholder="请输入0-100的成绩"
+                                       required
+                                       onchange="updateScoreLevel()">
+                                {% if form.score.errors %}
+                                    <div class="text-danger small">{{ form.score.errors.0 }}</div>
+                                {% endif %}
+                                <div class="form-text">支持小数点后1位，范围0-100</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">修改日期</label>
+                                <input type="date" 
+                                       name="date" 
+                                       id="date" 
+                                       class="form-control" 
+                                       value="{% now 'Y-m-d' %}">
+                                {% if form.date.errors %}
+                                    <div class="text-danger small">{{ form.date.errors.0 }}</div>
+                                {% endif %}
+                                <div class="form-text">修改成绩的日期</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 成绩等级显示 -->
+                    <div class="mb-3">
+                        <div class="alert alert-light" id="scoreLevel">
+                            <strong>成绩等级：</strong>
+                            <span id="levelText"></span>
+                            <span id="levelBadge"></span>
+                        </div>
+                    </div>
+
+                    <!-- 原始成绩信息 -->
+                    <div class="mb-3">
+                        <div class="alert alert-info">
+                            <h6>原始成绩信息：</h6>
+                            <p class="mb-1">
+                                <strong>原成绩：</strong>
+                                <span class="badge 
+                                    {% if score.score >= 90 %}bg-success
+                                    {% elif score.score >= 80 %}bg-primary
+                                    {% elif score.score >= 70 %}bg-info
+                                    {% elif score.score >= 60 %}bg-warning
+                                    {% else %}bg-danger
+                                    {% endif %}">
+                                    {{ score.score }}分
+                                </span>
+                            </p>
+                            <p class="mb-0">
+                                <strong>录入日期：</strong>{{ score.date }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'students:score_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回列表
+                        </a>
+                        <div class="btn-group">
+                            <a href="{% url 'students:student_transcript' score.student.student_id %}" class="btn btn-outline-info">
+                                <i class="bi bi-file-text"></i> 查看成绩单
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> 保存修改
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 修改说明 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    修改说明
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>修改规则：</h6>
+                        <ul class="mb-0">
+                            <li>学生和课程信息不可修改</li>
+                            <li>只能修改成绩和日期</li>
+                            <li>成绩范围：0-100分</li>
+                            <li>支持小数点后1位</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>成绩等级：</h6>
+                        <ul class="mb-0">
+                            <li><span class="badge bg-success">优秀</span> 90-100分</li>
+                            <li><span class="badge bg-primary">良好</span> 80-89分</li>
+                            <li><span class="badge bg-info">中等</span> 70-79分</li>
+                            <li><span class="badge bg-warning">及格</span> 60-69分</li>
+                            <li><span class="badge bg-danger">不及格</span> 0-59分</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>注意事项：</h6>
+                        <ul class="mb-0">
+                            <li>修改后会更新日期信息</li>
+                            <li>修改会自动保存到数据文件</li>
+                            <li>建议谨慎修改已提交的成绩</li>
+                            <li>可查看学生完整成绩单</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateScoreLevel() {
+    const scoreInput = document.getElementById('score');
+    const scoreLevel = document.getElementById('scoreLevel');
+    const levelText = document.getElementById('levelText');
+    const levelBadge = document.getElementById('levelBadge');
+    
+    const score = parseFloat(scoreInput.value);
+    
+    if (isNaN(score) || score < 0 || score > 100) {
+        levelText.textContent = '无效成绩';
+        levelBadge.innerHTML = '<span class="badge bg-danger">无效</span>';
+        return;
+    }
+    
+    let level, badgeClass;
+    
+    if (score >= 90) {
+        level = '优秀';
+        badgeClass = 'bg-success';
+    } else if (score >= 80) {
+        level = '良好';
+        badgeClass = 'bg-primary';
+    } else if (score >= 70) {
+        level = '中等';
+        badgeClass = 'bg-info';
+    } else if (score >= 60) {
+        level = '及格';
+        badgeClass = 'bg-warning';
+    } else {
+        level = '不及格';
+        badgeClass = 'bg-danger';
+    }
+    
+    levelText.textContent = level;
+    levelBadge.innerHTML = `<span class="badge ${badgeClass}">${score}分</span>`;
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    const scoreInput = document.getElementById('score');
+    scoreInput.addEventListener('input', updateScoreLevel);
+    
+    // 初始化显示
+    updateScoreLevel();
+});
+</script>
+{% endblock %}

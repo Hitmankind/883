@@ -1,0 +1,193 @@
+{% extends 'students/base.html' %}
+
+{% block title %}
+    {% if student %}Edit Student{% else %}Add Student{% endif %} - Student Grade Management System
+{% endblock %}
+
+{% block page_title %}
+    {% if student %}Edit Student Information{% else %}Add Student Information{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person{% if not student %}-plus{% endif %}"></i>
+                    {% if student %}Edit Student Information{% else %}Add Student Information{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="student_id" class="form-label">Student ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="student_id" name="student_id" 
+                                   value="{% if form_data %}{{ form_data.student_id }}{% elif student %}{{ student.student_id }}{% endif %}"
+                                   {% if student %}readonly{% endif %}
+                                   pattern="[0-9]{8}" 
+                                   title="Student ID must be 8 digits, first 4 for enrollment year, last 4 for sequence number"
+                                   placeholder="Example: 20200001"
+                                   required>
+                            <div class="form-text">
+                                First 4 digits for enrollment year, last 4 digits for sequence number (e.g.: 20200001)
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{% if form_data %}{{ form_data.name }}{% elif student %}{{ student.name }}{% endif %}" 
+                                   maxlength="20"
+                                   placeholder="Please enter student name"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="gender" class="form-label">Gender <span class="text-danger">*</span></label>
+                            <select class="form-select" id="gender" name="gender" required>
+                                <option value="">Select gender</option>
+                                <option value="M" {% if form_data.gender == '男' or student.gender == '男' or form_data.gender == 'M' or student.gender == 'M' %}selected{% endif %}>Male</option>
+                                <option value="F" {% if form_data.gender == '女' or student.gender == '女' or form_data.gender == 'F' or student.gender == 'F' %}selected{% endif %}>Female</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="birth_date" class="form-label">Birth Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="birth_date" name="birth_date" 
+                                   value="{% if form_data %}{{ form_data.birth_date }}{% elif student %}{{ student.birth_date|date:'Y-m-d' }}{% endif %}" 
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="major" class="form-label">Major <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="major" name="major" 
+                                   value="{% if form_data %}{{ form_data.major }}{% elif student %}{{ student.major }}{% endif %}" 
+                                   maxlength="20"
+                                   placeholder="Please enter major name"
+                                   required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="college" class="form-label">College <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="college" name="college" 
+                                   value="{% if form_data %}{{ form_data.college }}{% elif student %}{{ student.college }}{% endif %}" 
+                                   maxlength="20"
+                                   placeholder="Please enter college name"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'students:student_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to List
+                        </a>
+                        <div>
+                            <button type="reset" class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-arrow-clockwise"></i> Reset
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 
+                                {% if student %}Update{% else %}Add{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if student %}
+        <!-- 学生相关信息 -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-clipboard-check"></i>
+                            Enrollment Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">Courses Enrolled: <strong>{{ student.enrollments.count }}</strong></p>
+                        <a href="{% url 'students:enrollment_manage' %}?student_id={{ student.student_id }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-gear"></i> Manage Enrollments
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-list-check"></i>
+                            Grade Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">Grade Records: <strong>{{ student.scores.count }}</strong></p>
+                        <a href="{% url 'students:student_transcript' student.student_id %}" 
+                           class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-file-earmark-text"></i> View Transcript
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 学号输入验证
+document.getElementById('student_id').addEventListener('input', function(e) {
+    let value = e.target.value;
+    // 只允许数字
+    value = value.replace(/[^0-9]/g, '');
+    // 限制长度为8位
+    if (value.length > 8) {
+        value = value.substring(0, 8);
+    }
+    e.target.value = value;
+    
+    // Validate format
+        if (value.length === 8) {
+            let year = parseInt(value.substring(0, 4));
+            let currentYear = new Date().getFullYear();
+            if (year < 1900 || year > currentYear + 1) {
+                e.target.setCustomValidity('Invalid enrollment year');
+            } else {
+                e.target.setCustomValidity('');
+            }
+        }
+});
+
+// 姓名输入验证
+document.getElementById('name').addEventListener('input', function(e) {
+    let value = e.target.value;
+    // 移除特殊字符，保留中文、英文、数字和常见符号
+    value = value.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s\-\.]/g, '');
+    e.target.value = value;
+});
+
+// 专业和学院输入验证
+['major', 'college'].forEach(function(fieldId) {
+    document.getElementById(fieldId).addEventListener('input', function(e) {
+        let value = e.target.value;
+        // 移除特殊字符
+        value = value.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s\-]/g, '');
+        e.target.value = value;
+    });
+});
+</script>
+{% endblock %}

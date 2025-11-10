@@ -1,0 +1,210 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Home - Student Grade Management System{% endblock %}
+
+{% block page_title %}System Home{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card mb-4">
+      <div class="card-body text-center">
+        <h3 class="card-title">
+          <i class="bi bi-mortarboard-fill text-primary"></i>
+          Welcome to Student Grade Management System
+        </h3>
+        <p class="card-text text-muted">
+          A comprehensive student grade management platform that supports student information management, course management, grade entry and statistical analysis
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- 学生管理 -->
+  <div class="col-md-6 col-lg-3 mb-4">
+    <div class="card h-100">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="bi bi-people display-4 text-primary"></i>
+        </div>
+        <h5 class="card-title">Student Management</h5>
+        <p class="card-text">
+          Manage student basic information, including entry, modification, deletion and query functions
+        </p>
+        <div class="d-grid gap-2">
+          <a href="{% url 'students:student_list' %}" class="btn btn-primary">
+            <i class="bi bi-list"></i> Student List
+          </a>
+          <a href="{% url 'students:student_add' %}" class="btn btn-outline-primary">
+            <i class="bi bi-person-plus"></i> Add Student
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 课程管理 -->
+  <div class="col-md-6 col-lg-3 mb-4">
+    <div class="card h-100">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="bi bi-book display-4 text-success"></i>
+        </div>
+        <h5 class="card-title">Course Management</h5>
+        <p class="card-text">Manage course information, including adding, modifying, deleting and querying courses</p>
+        <div class="d-grid gap-2">
+          <a href="{% url 'students:course_list' %}" class="btn btn-success">
+            <i class="bi bi-list"></i> Course List
+          </a>
+          <a href="{% url 'students:course_add' %}" class="btn btn-outline-success">
+            <i class="bi bi-plus-circle"></i> Add Course
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 成绩管理 -->
+  <div class="col-md-6 col-lg-3 mb-4">
+    <div class="card h-100">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="bi bi-clipboard-check display-4 text-warning"></i>
+        </div>
+        <h5 class="card-title">Grade Management</h5>
+        <p class="card-text">Manage student enrollment and grade information, supporting batch entry and single entry</p>
+        <div class="d-grid gap-2">
+          <a href="{% url 'students:enrollment_manage' %}" class="btn btn-warning">
+            <i class="bi bi-clipboard-check"></i> Enrollment Management
+          </a>
+          <a
+            href="{% url 'students:score_batch_input' %}"
+            class="btn btn-outline-warning"
+          >
+            <i class="bi bi-input-cursor-text"></i> Batch Input
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 统计分析 -->
+  <div class="col-md-6 col-lg-3 mb-4">
+    <div class="card h-100">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="bi bi-bar-chart display-4 text-info"></i>
+        </div>
+        <h5 class="card-title">Statistics & Analysis</h5>
+        <p class="card-text">View student transcripts and course grade statistical analysis</p>
+        <div class="d-grid gap-2">
+          <a
+            href="#"
+            onclick="showStudentTranscriptModal()"
+            class="btn btn-info"
+          >
+            <i class="bi bi-file-earmark-text"></i> Student Transcript
+          </a>
+          <a href="{% url 'students:course_statistics' %}" class="btn btn-outline-info">
+            <i class="bi bi-bar-chart"></i> Course Statistics
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 系统统计信息 -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-graph-up"></i>
+          System Statistics
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-3">
+            <div class="border-end">
+              <h3 class="text-primary">{{ student_count }}</h3>
+              <p class="text-muted mb-0">Total Students</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="border-end">
+              <h3 class="text-success">{{ course_count }}</h3>
+              <p class="text-muted mb-0">Total Courses</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="border-end">
+              <h3 class="text-warning">{{ score_count }}</h3>
+              <p class="text-muted mb-0">Grade Records</p>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <h3 class="text-info">{{ enrollment_count }}</h3>
+            <p class="text-muted mb-0">Enrollment Records</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 快速操作 -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-lightning"></i>
+          Quick Actions
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <a
+              href="{% url 'students:student_search' %}"
+              class="btn btn-outline-primary w-100"
+            >
+              <i class="bi bi-search"></i> Search Students
+            </a>
+          </div>
+          <div class="col-md-4 mb-3">
+            <a
+              href="{% url 'students:score_list' %}"
+              class="btn btn-outline-success w-100"
+            >
+              <i class="bi bi-list-check"></i> Grade Query
+            </a>
+          </div>
+          <div class="col-md-4 mb-3">
+            <a href="{% url 'students:sync_data' %}" class="btn btn-outline-info w-100">
+              <i class="bi bi-arrow-repeat"></i> Data Synchronization
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showStudentTranscriptModal() {
+    const studentId = prompt("Please enter student ID:");
+    if (studentId && studentId.trim()) {
+      window.location.href =
+        "{% url 'students:student_transcript' 'PLACEHOLDER' %}".replace(
+          "PLACEHOLDER",
+          studentId.trim()
+        );
+    }
+  }
+</script>
+{% endblock %}

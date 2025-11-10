@@ -1,0 +1,272 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Data Synchronization - Student Grade Management System{% endblock %}
+
+{% block page_title %}Data Synchronization Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-download"></i>
+                    Database to Files
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Export data from database to .dat files for backup or external use.</p>
+                
+                <div class="mb-3">
+                    <h6>Export Content:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Student Info → student.dat</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Course Info → course.dat</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Score Info → score.dat</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Note:</strong> This operation will overwrite existing .dat file content.
+                </div>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <button type="submit" name="action" value="db_to_file" class="btn btn-primary">
+                        <i class="bi bi-download"></i> Export to Files
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-upload"></i>
+                    Files to Database
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Read data from .dat files and import to database for data recovery or initialization.</p>
+                
+                <div class="mb-3">
+                    <h6>Import Content:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> student.dat → Student Info</li>
+                        <li><i class="bi bi-check-circle text-success"></i> course.dat → Course Info</li>
+                        <li><i class="bi bi-check-circle text-success"></i> score.dat → Score Info</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This operation will clear existing database content and re-import.
+                </div>
+                
+                <form method="POST" onsubmit="return confirmImport()">
+                    {% csrf_token %}
+                    <button type="submit" name="action" value="file_to_db" class="btn btn-success">
+                        <i class="bi bi-upload"></i> Import from Files
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 文件状态信息 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-file-text"></i>
+                    Data File Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <i class="bi bi-people display-4 text-primary"></i>
+                                <h6 class="mt-2">student.dat</h6>
+                                {% if file_status.student_exists %}
+                                    <span class="badge bg-success">Exists</span>
+                                    <p class="text-muted small mt-1">{{ file_status.student_count }} records</p>
+                                    <p class="text-muted small">{{ file_status.student_modified }}</p>
+                                {% else %}
+                                    <span class="badge bg-danger">Not Exists</span>
+                                    <p class="text-muted small mt-1">File not found</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <i class="bi bi-book display-4 text-success"></i>
+                                <h6 class="mt-2">course.dat</h6>
+                                {% if file_status.course_exists %}
+                                    <span class="badge bg-success">存在</span>
+                                    <p class="text-muted small mt-1">{{ file_status.course_count }}条记录</p>
+                                    <p class="text-muted small">{{ file_status.course_modified }}</p>
+                                {% else %}
+                                    <span class="badge bg-danger">Not Exists</span>
+                                    <p class="text-muted small mt-1">File not found</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <i class="bi bi-list-check display-4 text-info"></i>
+                                <h6 class="mt-2">score.dat</h6>
+                                {% if file_status.score_exists %}
+                                    <span class="badge bg-success">存在</span>
+                                    <p class="text-muted small mt-1">{{ file_status.score_count }}条记录</p>
+                                    <p class="text-muted small">{{ file_status.score_modified }}</p>
+                                {% else %}
+                                    <span class="badge bg-danger">Not Exists</span>
+                                    <p class="text-muted small mt-1">File not found</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Database Status Information -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-database"></i>
+                    Database Status
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h4 class="text-primary">{{ db_status.student_count }}</h4>
+                            <p class="text-muted mb-0">Student Records</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h4 class="text-success">{{ db_status.course_count }}</h4>
+                            <p class="text-muted mb-0">Course Records</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border-end">
+                            <h4 class="text-info">{{ db_status.score_count }}</h4>
+                            <p class="text-muted mb-0">Score Records</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">{{ db_status.enrollment_count }}</h4>
+                        <p class="text-muted mb-0">Enrollment Records</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Synchronization Instructions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Synchronization Instructions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Data File Format:</h6>
+                        <ul class="mb-0">
+                            <li><strong>student.dat：</strong>学号|姓名|性别|出生日期|专业|学院</li>
+                            <li><strong>course.dat：</strong>课程号|课程名称|学分</li>
+                            <li><strong>score.dat：</strong>学号|姓名|课程号|课程名称|成绩|日期</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Notes:</h6>
+                        <ul class="mb-0">
+                            <li>数据文件使用UTF-8编码</li>
+                            <li>字段之间使用"|"分隔符</li>
+                            <li>日期格式为YYYY-MM-DD</li>
+                            <li>导入前请备份重要数据</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6>Export Function:</h6>
+                        <ul class="mb-0">
+                            <li>将数据库数据保存到.dat文件</li>
+                            <li>用于数据备份和外部处理</li>
+                            <li>不会影响数据库内容</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Import Function:</h6>
+                        <ul class="mb-0">
+                            <li>从.dat文件恢复数据到数据库</li>
+                            <li>会清空现有数据库内容</li>
+                            <li>用于数据恢复和初始化</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <div class="btn-group">
+            <a href="{% url 'students:student_list' %}" class="btn btn-outline-primary">
+                <i class="bi bi-people"></i> Student Management
+            </a>
+            <a href="{% url 'students:course_list' %}" class="btn btn-outline-success">
+                <i class="bi bi-book"></i> Course Management
+            </a>
+            <a href="{% url 'students:score_list' %}" class="btn btn-outline-info">
+                <i class="bi bi-list-check"></i> Score Management
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmImport() {
+    return confirm('Warning: This operation will clear existing database content and re-import data from files.\n\nAre you sure you want to continue?');
+}
+
+// Auto refresh file status (every 30 seconds)
+setInterval(function() {
+    // 这里可以添加AJAX请求来更新文件状态
+    // 为了简化，暂时不实现自动刷新
+}, 30000);
+</script>
+{% endblock %}

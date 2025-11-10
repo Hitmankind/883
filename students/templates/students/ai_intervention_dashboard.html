@@ -1,0 +1,580 @@
+{% extends 'students/base.html' %}
+
+{% block title %}AI Intervention Dashboard - WiseMentor{% endblock %}
+
+{% block page_title %}
+<div class="d-flex align-items-center">
+    <i class="bi bi-hand-index-thumb text-warning me-3"></i>
+    AI Teaching Intervention Dashboard
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- 统计卡片 -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-gradient-to-r from-warning to-orange-500 text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm text-white-800 mb-1">Pending Interventions</p>
+                        <h3 class="font-bold">24</h3>
+                        <p class="text-xs text-white-700">+12% from last week</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-full p-3">
+                        <i class="bi bi-clock-history text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-gradient-to-r from-primary to-blue-500 text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm text-white-800 mb-1">Active Interventions</p>
+                        <h3 class="font-bold">36</h3>
+                        <p class="text-xs text-white-700">+8% from last week</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-full p-3">
+                        <i class="bi bi-check-circle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-gradient-to-r from-success to-green-500 text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm text-white-800 mb-1">Successful Interventions</p>
+                        <h3 class="font-bold">78</h3>
+                        <p class="text-xs text-white-700">Success rate: 82%</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-full p-3">
+                        <i class="bi bi-trophy text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-gradient-to-r from-danger to-red-500 text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm text-white-800 mb-1">Critical Alerts</p>
+                        <h3 class="font-bold">8</h3>
+                        <p class="text-xs text-white-700">Requires immediate attention</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 rounded-full p-3">
+                        <i class="bi bi-exclamation-triangle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 主要内容区域 -->
+<div class="row">
+    <!-- 左侧面板 - 干预建议列表 -->
+    <div class="col-lg-8">
+        <!-- 干预建议列表 -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-task text-primary me-2"></i>
+                        Intervention Recommendations
+                    </h5>
+                    <div class="d-flex space-x-2">
+                        <div class="input-group input-group-sm" style="width: 200px;">
+                            <input type="text" class="form-control" placeholder="Search...">
+                            <button class="btn btn-primary"><i class="bi bi-search"></i></button>
+                        </div>
+                        <select class="form-select form-select-sm" style="width: 150px;">
+                            <option value="all">All Statuses</option>
+                            <option value="pending">Pending Review</option>
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="space-y-4">
+                    <!-- 干预建议项目 1 - 紧急 -->
+                    <div class="border border-danger rounded-lg p-4 bg-danger bg-opacity-5">
+                        <div class="d-flex justify-content-between items-start mb-3">
+                            <div class="flex items-center">
+                                <span class="badge bg-danger text-white me-2">Critical</span>
+                                <h6 class="font-bold">Mathematics Performance Decline</h6>
+                            </div>
+                            <div class="text-sm text-muted">2 hours ago</div>
+                        </div>
+                        
+                        <div class="d-flex mb-3">
+                            <div class="w-10 h-10 bg-primary bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                                <i class="bi bi-person text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold">Zhang Wei (20230014)</div>
+                                <div class="text-xs text-muted">CS2023-1 | Computer Science</div>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm mb-3">AI detected a critical 60% drop in Math performance over the past 4 weeks. Student failed the recent exam with a score of 45/100. Recommended immediate one-on-one tutoring.</p>
+                        
+                        <div class="bg-light p-3 rounded-lg mb-3">
+                            <h7 class="font-bold text-sm mb-2">AI Recommended Actions:</h7>
+                            <ul class="list-disc pl-5 text-xs space-y-1">
+                                <li>Schedule urgent meeting with student and math professor</li>
+                                <li>Assign supplementary exercises from "Functions Mastery" resource</li>
+                                <li>Implement daily 30-minute check-in sessions</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <div class="flex space-x-2">
+                                <button class="btn btn-sm btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i> Accept
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i> Reject
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil me-1"></i> Modify
+                                </button>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-bar-chart-line me-1"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 干预建议项目 2 - 高优先级 -->
+                    <div class="border border-warning rounded-lg p-4 bg-warning bg-opacity-5">
+                        <div class="d-flex justify-content-between items-start mb-3">
+                            <div class="flex items-center">
+                                <span class="badge bg-warning text-white me-2">High Priority</span>
+                                <h6 class="font-bold">Assignment Submission Issues</h6>
+                            </div>
+                            <div class="text-sm text-muted">1 day ago</div>
+                        </div>
+                        
+                        <div class="d-flex mb-3">
+                            <div class="w-10 h-10 bg-warning bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                                <i class="bi bi-person text-warning"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold">Li Ming (20230027)</div>
+                                <div class="text-xs text-muted">CS2023-2 | Software Engineering</div>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm mb-3">Student has missed 3 consecutive programming assignments and shows declining engagement in CS201. Early intervention recommended to prevent further disengagement.</p>
+                        
+                        <div class="bg-light p-3 rounded-lg mb-3">
+                            <h7 class="font-bold text-sm mb-2">AI Recommended Actions:</h7>
+                            <ul class="list-disc pl-5 text-xs space-y-1">
+                                <li>Schedule academic advising session to discuss challenges</li>
+                                <li>Review time management skills and provide resources</li>
+                                <li>Create a catch-up plan with extended deadlines</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <div class="flex space-x-2">
+                                <button class="btn btn-sm btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i> Accept
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i> Reject
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil me-1"></i> Modify
+                                </button>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-bar-chart-line me-1"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 干预建议项目 3 - 中等优先级 -->
+                    <div class="border border-info rounded-lg p-4 bg-info bg-opacity-5">
+                        <div class="d-flex justify-content-between items-start mb-3">
+                            <div class="flex items-center">
+                                <span class="badge bg-info text-white me-2">Medium Priority</span>
+                                <h6 class="font-bold">Study Habit Improvement</h6>
+                            </div>
+                            <div class="text-sm text-muted">2 days ago</div>
+                        </div>
+                        
+                        <div class="d-flex mb-3">
+                            <div class="w-10 h-10 bg-info bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                                <i class="bi bi-person text-info"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold">Wang Fang (20230019)</div>
+                                <div class="text-xs text-muted">CS2023-1 | Artificial Intelligence</div>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm mb-3">Data shows inconsistent study patterns with last-minute cramming before exams. Student performs well but experiences high stress levels. Study scheduling assistance recommended.</p>
+                        
+                        <div class="bg-light p-3 rounded-lg mb-3">
+                            <h7 class="font-bold text-sm mb-2">AI Recommended Actions:</h7>
+                            <ul class="list-disc pl-5 text-xs space-y-1">
+                                <li>Introduce structured study planning tools</li>
+                                <li>Recommend spaced repetition learning techniques</li>
+                                <li>Schedule follow-up in 2 weeks to assess progress</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <div class="flex space-x-2">
+                                <button class="btn btn-sm btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i> Accept
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i> Reject
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil me-1"></i> Modify
+                                </button>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-bar-chart-line me-1"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 干预建议项目 4 - 进行中 -->
+                    <div class="border border-success rounded-lg p-4 bg-success bg-opacity-5">
+                        <div class="d-flex justify-content-between items-start mb-3">
+                            <div class="flex items-center">
+                                <span class="badge bg-success text-white me-2">Active Intervention</span>
+                                <h6 class="font-bold">Calculus Improvement Plan</h6>
+                            </div>
+                            <div class="text-sm text-muted">1 week ago</div>
+                        </div>
+                        
+                        <div class="d-flex mb-3">
+                            <div class="w-10 h-10 bg-success bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                                <i class="bi bi-person text-success"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold">Chen Jun (20230042)</div>
+                                <div class="text-xs text-muted">CS2023-2 | Computer Science</div>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm mb-3">Intervention plan in progress for 1 week. Initial results show 15% improvement in assignment scores. Continue current plan with weekly progress reviews.</p>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between text-xs mb-1">
+                                <span>Intervention Progress</span>
+                                <span>60% Complete</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-file-text me-1"></i> Update Progress
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-bar-chart-line me-1"></i> View Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <button class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-down-circle me-1"></i> Load More Recommendations
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右侧面板 -->
+    <div class="col-lg-4">
+        <!-- 干预统计 -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart text-purple-600 me-2"></i>
+                    Intervention Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <canvas id="intervention-chart" height="200"></canvas>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="d-flex justify-content-between">
+                        <div class="d-flex items-center">
+                            <div class="w-3 h-3 bg-warning rounded-full mr-2"></div>
+                            <span class="text-sm">Pending Review</span>
+                        </div>
+                        <span class="text-sm font-bold">24</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div class="d-flex items-center">
+                            <div class="w-3 h-3 bg-primary rounded-full mr-2"></div>
+                            <span class="text-sm">Active Interventions</span>
+                        </div>
+                        <span class="text-sm font-bold">36</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div class="d-flex items-center">
+                            <div class="w-3 h-3 bg-success rounded-full mr-2"></div>
+                            <span class="text-sm">Successful</span>
+                        </div>
+                        <span class="text-sm font-bold">78</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div class="d-flex items-center">
+                            <div class="w-3 h-3 bg-danger rounded-full mr-2"></div>
+                            <span class="text-sm">Critical</span>
+                        </div>
+                        <span class="text-sm font-bold">8</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 课程风险分布 -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart text-green-600 me-2"></i>
+                    Course Risk Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <canvas id="course-risk-chart" height="150"></canvas>
+                    </div>
+                    <div class="col-6">
+                        <div class="space-y-2">
+                            <div class="d-flex justify-content-between">
+                                <div class="d-flex items-center">
+                                    <div class="w-3 h-3 bg-danger rounded-full mr-2"></div>
+                                    <span class="text-xs">Mathematics</span>
+                                </div>
+                                <span class="text-xs font-bold">35%</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <div class="d-flex items-center">
+                                    <div class="w-3 h-3 bg-warning rounded-full mr-2"></div>
+                                    <span class="text-xs">Programming</span>
+                                </div>
+                                <span class="text-xs font-bold">28%</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <div class="d-flex items-center">
+                                    <div class="w-3 h-3 bg-info rounded-full mr-2"></div>
+                                    <span class="text-xs">Algorithms</span>
+                                </div>
+                                <span class="text-xs font-bold">22%</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <div class="d-flex items-center">
+                                    <div class="w-3 h-3 bg-success rounded-full mr-2"></div>
+                                    <span class="text-xs">Other</span>
+                                </div>
+                                <span class="text-xs font-bold">15%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 干预效果分析 -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-trend-up text-blue-600 me-2"></i>
+                    Intervention Effectiveness
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="effectiveness-chart" height="200"></canvas>
+                <div class="mt-3 p-3 bg-info bg-opacity-10 rounded-lg">
+                    <h6 class="text-sm font-bold mb-1">Key Insights:</h6>
+                    <ul class="list-disc pl-5 text-xs space-y-1">
+                        <li>Early interventions (within 2 weeks of first warning) show 75% success rate</li>
+                        <li>Math interventions require 2-3 weeks longer than other subjects</li>
+                        <li>One-on-one tutoring has highest impact for struggling students</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 快速操作 -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning text-yellow-500 me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="space-y-3">
+                    <button class="btn btn-block btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Create Custom Intervention
+                    </button>
+                    <button class="btn btn-block btn-outline-primary">
+                        <i class="bi bi-filter-circle me-2"></i>
+                        Filter Critical Alerts
+                    </button>
+                    <button class="btn btn-block btn-outline-primary">
+                        <i class="bi bi-calendar-check me-2"></i>
+                        Schedule Group Sessions
+                    </button>
+                    <button class="btn btn-block btn-outline-primary">
+                        <i class="bi bi-file-earmark-bar-graph me-2"></i>
+                        Generate Weekly Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 干预统计图表
+const interventionCtx = document.getElementById('intervention-chart').getContext('2d');
+const interventionChart = new Chart(interventionCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        datasets: [
+            {
+                label: 'New Interventions',
+                data: [12, 18, 15, 21],
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgb(54, 162, 235)',
+                borderWidth: 1
+            },
+            {
+                label: 'Resolved',
+                data: [8, 14, 10, 16],
+                backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                borderColor: 'rgb(75, 192, 192)',
+                borderWidth: 1
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Number of Interventions'
+                }
+            }
+        }
+    }
+});
+
+// 课程风险分布图表
+const courseRiskCtx = document.getElementById('course-risk-chart').getContext('2d');
+const courseRiskChart = new Chart(courseRiskCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Mathematics', 'Programming', 'Algorithms', 'Other'],
+        datasets: [{
+            data: [35, 28, 22, 15],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(255, 205, 86, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(75, 192, 192, 0.7)'
+            ],
+            borderColor: [
+                'rgb(255, 99, 132)',
+                'rgb(255, 205, 86)',
+                'rgb(54, 162, 235)',
+                'rgb(75, 192, 192)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        cutout: '70%'
+    }
+});
+
+// 干预效果分析图表
+const effectivenessCtx = document.getElementById('effectiveness-chart').getContext('2d');
+const effectivenessChart = new Chart(effectivenessCtx, {
+    type: 'line',
+    data: {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+        datasets: [
+            {
+                label: 'Average Grade Improvement',
+                data: [5, 12, 18, 25, 32, 38],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Engagement Improvement',
+                data: [8, 15, 22, 28, 33, 36],
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.4,
+                fill: true
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Improvement Percentage'
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

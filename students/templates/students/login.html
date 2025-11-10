@@ -1,0 +1,62 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Login - Student Grade Management System{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-lg border-0 rounded-lg mt-5">
+      <div class="card-header bg-primary text-white text-center">
+        <h3 class="card-title m-0">
+          <i class="bi bi-lock-fill me-2"></i>Student Grade Management System Login
+        </h3>
+      </div>
+      <div class="card-body p-5">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+        
+        <form method="post" action="{% url 'students:login' %}">
+          {% csrf_token %}
+          
+          <div class="mb-4">
+            <label for="user_type" class="form-label">User Type</label>
+            <div class="form-check">
+              <input type="radio" class="form-check-input" id="teacher" name="user_type" value="teacher" checked>
+              <label class="form-check-label" for="teacher">Teacher</label>
+            </div>
+            <div class="form-check">
+              <input type="radio" class="form-check-input" id="student" name="user_type" value="student">
+              <label class="form-check-label" for="student">Student</label>
+            </div>
+          </div>
+          
+          <div class="mb-4">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username" required autofocus>
+          </div>
+          
+          <div class="mb-4">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+          </div>
+          
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">Login</button>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer text-center text-muted">
+        <p class="mb-0">© 2024 Student Grade Management System</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

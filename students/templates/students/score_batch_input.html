@@ -1,0 +1,265 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Batch Score Input - Student Grade Management System{% endblock %}
+
+{% block page_title %}Batch Score Input{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-book"></i>
+                    Select Course
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" id="courseForm">
+                    <div class="mb-3">
+                        <label for="course_id" class="form-label">课程</label>
+                        <select name="course_id" id="course_id" class="form-select" onchange="this.form.submit()">
+                            <option value="">Please select a course</option>
+                            {% for course in courses %}
+                            <option value="{{ course.course_id }}" 
+                                    {% if selected_course_id == course.course_id %}selected{% endif %}>
+                                {{ course.course_id }} - {{ course.course_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+
+                {% if selected_course %}
+                <div class="alert alert-info">
+                    <h6>{{ selected_course.course_name }}</h6>
+                    <p class="mb-1">Course ID：{{ selected_course.course_id }}</p>
+                    <p class="mb-0">Credits：{{ selected_course.credits }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        {% if selected_course and enrolled_students %}
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                        <i class="bi bi-people"></i>
+                        Enrolled Students ({{ enrolled_students|length }} students)
+                    </h6>
+                    <div>
+                        Input: <span id="inputCount">0</span> / {{ enrolled_students|length }}
+                    </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-success" onclick="fillAllScores(85)">
+                            Fill with 85
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" onclick="clearAllScores()">
+                            Clear All Scores
+                        </button>
+                    </div>
+                </div>
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="course_id" value="{{ selected_course.id }}">
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Major</th>
+                                    <th>Score</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for enrollment in enrolled_students %}
+                                <tr>
+                                    <td>{{ enrollment.student.student_id }}</td>
+                                    <td>{{ enrollment.student.name }}</td>
+                                    <td>{{ enrollment.student.major }}</td>
+                                    <td>
+                                        <input type="number" 
+                                               name="score_{{ enrollment.student.student_id }}" 
+                                               class="form-control form-control-sm score-input" 
+                                               min="0" 
+                                               max="100" 
+                                               step="0.1"
+                                               value="{{ enrollment.existing_score }}"
+                                               placeholder="0-100"
+                                               onchange="updateScoreStatus(this)">
+                                    </td>
+                                    <td>
+                                        <span class="badge score-status">
+                                            {% if enrollment.existing_score %}<span class="badge bg-success">Entered</span>{% else %}<span class="badge bg-secondary">Not Entered</span>{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <span class="text-muted">
+                                Input: <span id="inputCount">{{ input_count }}</span> / {{ students|length }}
+                            </span>
+                        </div>
+                        <div class="btn-group">
+                            <button type="submit" name="action" value="save" class="btn btn-outline-primary">
+                                <i class="bi bi-save"></i> Save
+                            </button>
+                            <button type="submit" name="action" value="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Submit
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% elif selected_course %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-people display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">No students enrolled in this course</h4>
+                <p class="text-muted">Please assign students to this course in enrollment management</p>
+                <a href="{% url 'students:enrollment_manage' %}" class="btn btn-primary">
+                    <i class="bi bi-person-plus"></i> Manage Enrollments
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-book display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">Please select a course first</h4>
+                <p class="text-muted">Select a course from the left to input scores</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Score Input Tips -->
+{% if selected_course and students %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Input Instructions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Score Requirements：</h6>
+                        <ul class="mb-0">
+                            <li>Score range：0-100</li>
+                            <li>Supports 1 decimal place</li>
+                            <li>Blank means not entered</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Operation Instructions：</h6>
+                        <ul class="mb-0">
+                            <li><strong>Save：</strong>Save current scores, can continue editing</li>
+                            <li><strong>Submit：</strong>Formal submission, update to system</li>
+                            <li>Use shortcut buttons to batch fill or clear</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function fillAllScores(score) {
+    const inputs = document.querySelectorAll('.score-input');
+    inputs.forEach(input => {
+        if (!input.value) {  // 只填充空白的成绩
+            input.value = score;
+            updateScoreStatus(input);
+        }
+    });
+    updateInputCount();
+}
+
+function clearAllScores() {
+    if (confirm('Are you sure you want to clear all scores?')) {
+        const inputs = document.querySelectorAll('.score-input');
+        inputs.forEach(input => {
+            input.value = '';
+            updateScoreStatus(input);
+        });
+        updateInputCount();
+    }
+}
+
+function updateScoreStatus(input) {
+    const row = input.closest('tr');
+    const statusSpan = row.querySelector('.score-status span');
+    
+    if (input.value && input.value.trim() !== '') {
+        const score = parseFloat(input.value);
+        if (score >= 0 && score <= 100) {
+            statusSpan.className = 'badge bg-success';
+            statusSpan.textContent = 'Entered';
+            input.classList.remove('is-invalid');
+        } else {
+            statusSpan.className = 'badge bg-danger';
+            statusSpan.textContent = 'Invalid';
+            input.classList.add('is-invalid');
+        }
+    } else {
+        statusSpan.className = 'badge bg-secondary';
+        statusSpan.textContent = 'Not Entered';
+        input.classList.remove('is-invalid');
+    }
+    
+    updateInputCount();
+}
+
+function updateInputCount() {
+    const inputs = document.querySelectorAll('.score-input');
+    let count = 0;
+    
+    inputs.forEach(input => {
+        if (input.value && input.value.trim() !== '') {
+            const score = parseFloat(input.value);
+            if (score >= 0 && score <= 100) {
+                count++;
+            }
+        }
+    });
+    
+    document.getElementById('inputCount').textContent = count;
+}
+
+// 页面加载时更新计数
+document.addEventListener('DOMContentLoaded', function() {
+    updateInputCount();
+    
+    // 为所有成绩输入框添加事件监听
+    const inputs = document.querySelectorAll('.score-input');
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            updateScoreStatus(this);
+        });
+    });
+});
+</script>
+{% endblock %}
