@@ -86,6 +86,12 @@ def index(request):
     })
 
 
+@teacher_required
+def robot_arm(request):
+    """Teaching Mechanical Arm module page (demo)."""
+    return render(request, 'students/robot_arm.html')
+
+
 # 学生信息管理
 @teacher_required
 def student_list(request):

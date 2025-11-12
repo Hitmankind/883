@@ -1,0 +1,31 @@
+{% extends 'students/base.html' %}
+
+{% block title %}Teaching Mechanical Arm - Demo{% endblock %}
+
+{% block page_title %}Teaching Mechanical Arm Module{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-robot text-primary me-2"></i>Mechanical Arm Demo</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-3">This demo showcases a teaching mechanical arm module placeholder. Integrate real controls or stream in the future.</p>
+        <div class="text-center mb-4">
+          <div class="bg-light border rounded p-5">
+            <i class="bi bi-gear-wide-connected display-4 text-secondary"></i>
+            <p class="mt-3 mb-0">Mechanical Arm Visualization Placeholder</p>
+          </div>
+        </div>
+        <div class="d-flex gap-2 justify-content-center">
+          <button class="btn btn-primary" onclick="alert('Move command demo')"><i class="bi bi-arrow-up-right"></i> Move</button>
+          <button class="btn btn-outline-primary" onclick="alert('Grip command demo')"><i class="bi bi-hand-index"></i> Grip</button>
+          <button class="btn btn-outline-secondary" onclick="alert('Release command demo')"><i class="bi bi-hand-thumbs-up"></i> Release</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

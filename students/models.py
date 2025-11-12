@@ -116,12 +116,12 @@ class Course(models.Model):
     ]
     
     course_id = models.CharField(
-        max_length=8, 
+        max_length=12, 
         primary_key=True,
-        validators=[RegexValidator(r'^(JCKC|ZYBX|ZYXX|BYSJ)\d{4}$', '课程号格式不正确')],
+        validators=[RegexValidator(r'^[A-Z]{3,4}\d{3,4}$', '课程号格式不正确')],
         verbose_name='课程号'
     )
-    course_name = models.CharField(max_length=20, verbose_name='课程名称')
+    course_name = models.CharField(max_length=100, verbose_name='课程名称')
     credits = models.IntegerField(verbose_name='学分')
     
     class Meta:

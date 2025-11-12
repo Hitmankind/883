@@ -7,6 +7,8 @@ urlpatterns = [
     path('logout/', views.logout, name='logout'),
     # 首页
     path('', views.index, name='index'),
+    # Teaching Mechanical Arm
+    path('robot-arm/', views.robot_arm, name='robot_arm'),
     
     # 学生管理
     path('students/', views.student_list, name='student_list'),

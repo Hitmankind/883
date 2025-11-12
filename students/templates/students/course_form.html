@@ -28,13 +28,13 @@
                             <input type="text" class="form-control" id="course_id" name="course_id" 
                                    value="{{ course.course_id|default:'' }}" 
                                    {% if course %}readonly{% endif %}
-                                   pattern="[A-Z]{4}[0-9]{4}" 
-                                   title="Course ID format: First 4 letters for course type, last 4 digits for sequence number"
-                                   placeholder="Example: ZYBX0001"
-                                   maxlength="8"
+                                   pattern="[A-Z]{3,4}[0-9]{3,4}" 
+                                   title="Course ID format: 3–4 uppercase letters followed by 3–4 digits (e.g., CSIT985, CSCI944)"
+                                   placeholder="Example: CSIT985 or CSCI944"
+                                   maxlength="12"
                                    required>
                             <div class="form-text">
-                                First 4 letters: JCKC(Basic Course), ZYBX(Major Required), ZYXX(Major Elective), BYSJ(Graduation Project)
+                                Use standard codes like CSIT, CSCI, ENGG, ECTE followed by 3–4 digits.
                             </div>
                         </div>
                         
@@ -71,7 +71,7 @@
                                 <option value="BYSJ">Graduation Project (BYSJ)</option>
                             </select>
                             <div class="form-text">
-                                Automatically recognized based on course ID
+                                Course type badges are displayed for legacy course IDs (JCKC/ZYBX/ZYXX/BYSJ).
                             </div>
                         </div>
                     </div>
