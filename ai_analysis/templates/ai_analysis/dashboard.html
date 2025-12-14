@@ -1,0 +1,285 @@
+{% extends 'ai_analysis/base.html' %}
+
+{% block title %}分析仪表板 - 学生 AI 学情分析系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-tachometer-alt"></i> 分析仪表板
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'ai_analysis:create_analysis' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 创建新分析
+        </a>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            总分析数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_analyses }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            已完成
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.completed_analyses }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            进行中
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pending_analyses }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            失败
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.failed_analyses }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 分析记录列表 -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-list"></i> 分析记录
+        </h6>
+    </div>
+    <div class="card-body">
+        {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>学生</th>
+                            <th>分析类型</th>
+                            <th>标题</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th>置信度</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for analysis in page_obj %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'ai_analysis:student_history' analysis.student.student_id %}">
+                                    {{ analysis.student.name }}
+                                </a>
+                                <br>
+                                <small class="text-muted">{{ analysis.student.student_id }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">
+                                    {% for type, label in analysis_types %}
+                                        {% if analysis.analysis_type == type %}{{ label }}{% endif %}
+                                    {% endfor %}
+                                </span>
+                            </td>
+                            <td>{{ analysis.title }}</td>
+                            <td>
+                                {% if analysis.status == 'pending' %}
+                                    <span class="status-pending">
+                                        <i class="fas fa-clock"></i> 待处理
+                                    </span>
+                                {% elif analysis.status == 'processing' %}
+                                    <span class="status-processing">
+                                        <i class="fas fa-spinner fa-spin"></i> 分析中
+                                    </span>
+                                {% elif analysis.status == 'completed' %}
+                                    <span class="status-completed">
+                                        <i class="fas fa-check-circle"></i> 已完成
+                                    </span>
+                                {% elif analysis.status == 'failed' %}
+                                    <span class="status-failed">
+                                        <i class="fas fa-times-circle"></i> 失败
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ analysis.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if analysis.ai_confidence %}
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar" role="progressbar"
+                                             style="width: {{ analysis.ai_confidence|mul:100 }}%"
+                                             aria-valuenow="{{ analysis.ai_confidence|mul:100 }}"
+                                             aria-valuemin="0" aria-valuemax="100">
+                                            {{ analysis.ai_confidence|mul:100|floatformat:1 }}%
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'ai_analysis:analysis_detail' analysis.id %}"
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if analysis.status == 'pending' %}
+                                        <button type="button"
+                                                class="btn btn-outline-success run-analysis"
+                                                data-analysis-id="{{ analysis.id }}">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    {% endif %}
+                                    {% if analysis.status == 'completed' %}
+                                        <a href="{% url 'ai_analysis:analysis_report' analysis.id %}"
+                                           class="btn btn-outline-info">
+                                            <i class="fas fa-file-alt"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            {% if page_obj.has_other_pages %}
+                <nav aria-label="分析记录分页">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">上一页</span>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">下一页</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">暂无分析记录</h5>
+                <p class="text-muted">
+                    创建您的第一个学生学情分析来开始使用 AI 分析功能。
+                </p>
+                <a href="{% url 'ai_analysis:create_analysis' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 创建分析
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // 运行分析按钮
+    $('.run-analysis').click(function() {
+        var btn = $(this);
+        var analysisId = btn.data('analysis-id');
+
+        if (confirm('确定要开始运行此分析吗？')) {
+            btn.prop('disabled', true);
+            btn.html('<i class="fas fa-spinner fa-spin"></i>');
+
+            $.ajax({
+                url: '/ai/run/' + analysisId + '/',
+                method: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert('分析已开始运行，预计需要几分钟时间完成。');
+                        location.reload();
+                    } else {
+                        alert('分析启动失败：' + response.error);
+                        btn.prop('disabled', false);
+                        btn.html('<i class="fas fa-play"></i>');
+                    }
+                },
+                error: function() {
+                    alert('网络错误，请稍后重试。');
+                    btn.prop('disabled', false);
+                    btn.html('<i class="fas fa-play"></i>');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

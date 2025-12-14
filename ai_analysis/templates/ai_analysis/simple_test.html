@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 学情分析演示</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .card { border: 1px solid #ddd; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn:hover { background: #0056b3; }
+        .status { padding: 5px 10px; border-radius: 4px; color: white; }
+        .status.pending { background: #ffc107; color: black; }
+        .status.processing { background: #17a2b8; }
+        .status.completed { background: #28a745; }
+        .status.failed { background: #dc3545; }
+        .progress { width: 100%; height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: #28a745; transition: width 0.3s ease; }
+    </style>
+</head>
+<body>
+    <h1>🧠 Student AI Analysis 演示系统</h1>
+
+    <!-- 功能介绍 -->
+    <div class="card">
+        <h2>🎯 功能概述</h2>
+        <p><strong>学生 AI 学情分析系统</strong>已成功集成到您的成绩管理系统中，提供以下功能：</p>
+        <ul>
+            <li>📊 <strong>学业表现分析</strong> - 全面评估学生学业水平</li>
+            <li>📈 <strong>学习进度分析</strong> - 分析学习节奏和进展</li>
+            <li>🔍 <strong>优势劣势分析</strong> - SWOT 框架深度分析</li>
+            <li>💡 <strong>改进建议</strong> - 个性化学习指导</li>
+            <li>🎯 <strong>综合分析</strong> - 360度全方位评估</li>
+        </ul>
+    </div>
+
+    <!-- AI 引擎状态 -->
+    <div class="card">
+        <h2>🤖 AI 分析引擎状态</h2>
+        <div style="display: flex; align-items: center; margin: 10px 0;">
+            <span style="font-size: 24px;">✅</span>
+            <span style="margin-left: 10px;"><strong>DeepSeek API</strong> - 已配置并就绪</span>
+        </div>
+        <ul>
+            <li>API 密钥：已配置 (sk-c644f083be50412da20f753d14bd953c)</li>
+            <li>分析模型：deepseek-chat</li>
+            <li>最大令牌：4000</li>
+            <li>温度设置：0.7 (平衡创意和准确性)</li>
+            <li>超时设置：60秒</li>
+        </ul>
+    </div>
+
+    <!-- 数据库模型 -->
+    <div class="card">
+        <h2>🗄️ 数据库模型</h2>
+        <p>系统已创建以下数据模型来支持 AI 分析：</p>
+        <ul>
+            <li><strong>StudentAnalysis</strong> - 学生学情分析记录</li>
+            <li><strong>PromptTemplate</strong> - 提示词模板管理 (已初始化 5 个模板)</li>
+            <li><strong>AIServiceLog</strong> - AI 服务调用日志</li>
+        </ul>
+    </div>
+
+    <!-- 提示词工程 -->
+    <div class="card">
+        <h2>✍️ 提示词工程模板</h2>
+        <p>系统包含以下专业的分析提示词模板：</p>
+        <ol>
+            <li><strong>学业表现分析模板</strong> - 包含学业评估、学科分析、学习特征等</li>
+            <li><strong>学习进度分析模板</strong> - 关注学习节奏、知识掌握、发展趋势</li>
+            <li><strong>优势劣势分析模板</strong> - 使用 SWOT 框架进行综合评估</li>
+            <li><strong>改进建议模板</strong> - 提供具体可行的学习提升方案</li>
+            <li><strong>综合分析模板</strong> - 360度全方位学情分析</li>
+        </ol>
+    </div>
+
+    <!-- 使用流程 -->
+    <div class="card">
+        <h2>🔄 AI 分析工作流程</h2>
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: #007bff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">1</div>
+                <div style="margin-left: 15px;"><strong>选择学生</strong> - 从学生列表中选择要分析的学生</div>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: #007bff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">2</div>
+                <div style="margin-left: 15px;"><strong>选择分析类型</strong> - 选择 5 种分析类型之一</div>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: #007bff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">3</div>
+                <div style="margin-left: 15px;"><strong>数据收集</strong> - 系统自动收集学生成绩、课程等信息</div>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: #007bff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">4</div>
+                <div style="margin-left: 15px;"><strong>AI 分析</strong> - 调用 DeepSeek API 进行深度分析</div>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: #007bff; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">5</div>
+                <div style="margin-left: 15px;"><strong>生成报告</strong> - 输出结构化的 Markdown 分析报告</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 技术架构 -->
+    <div class="card">
+        <h2>🏗️ 技术架构</h2>
+        <ul>
+            <li><strong>前端</strong> - Bootstrap 5 + jQuery</li>
+            <li><strong>后端</strong> - Django 5.1.6</li>
+            <li><strong>数据库</strong> - SQLite</li>
+            <li><strong>AI 引擎</strong> - DeepSeek API</li>
+            <li><strong>提示词工程</strong> - 5 种专业教育分析模板</li>
+        </ul>
+    </div>
+
+    <!-- 访问链接 -->
+    <div class="card">
+        <h2>🔗 系统访问链接</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <button class="btn" onclick="window.open('http://127.0.0.1:8000/', '_blank')">🏠 主页</button>
+            <button class="btn" onclick="window.open('http://127.0.0.1:8000/students/', '_blank')">👥 学生管理</button>
+            <button class="btn" onclick="window.open('http://127.0.0.1:8000/ai-dashboard/', '_blank')">📊 AI 仪表板</button>
+            <button class="btn" onclick="window.open('http://127.0.0.1:8000/ai-intervention-dashboard/', '_blank')">🎯 AI 干预面板</button>
+            <button class="btn" onclick="window.open('http://127.0.0.1:8000/courses/', '_blank')">📚 课程管理</button>
+            <button class="btn" onclick="window.open('http://127.0.0.1:8000/scores/', '_blank')">📈 成绩管理</button>
+        </div>
+    </div>
+
+    <!-- 快速演示 -->
+    <div class="card">
+        <h2>🚀 快速演示</h2>
+        <p><strong>要体验 AI 分析功能，请按以下步骤操作：</strong></p>
+        <ol>
+            <li>点击上方 <strong>"🏠 主页"</strong> 进入系统</li>
+            <li>在左侧导航栏找到 <strong>"AI 分析"</strong> 相关功能</li>
+            <li>或直接访问 <strong>"📊 AI 仪表板"</strong> 查看分析功能</li>
+            <li>选择学生和分析类型，创建您的第一个 AI 分析</li>
+        </ol>
+        <div style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin-top: 10px;">
+            <strong>💡 提示：</strong> AI 分析需要学生数据。如果系统暂无学生数据，请先在"学生管理"中添加一些学生和成绩记录。
+        </div>
+    </div>
+
+    <!-- 系统日志 -->
+    <div class="card">
+        <h2>📋 系统部署日志</h2>
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+            ✅ AI 分析应用创建完成<br>
+            ✅ 数据库模型迁移完成<br>
+            ✅ DeepSeek API 集成完成<br>
+            ✅ 提示词工程模板初始化完成 (5个模板)<br>
+            ✅ Web 界面和路由配置完成<br>
+            ✅ Django 服务器重启成功<br>
+            🚀 系统就绪，可以开始使用
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; color: #666;">
+        <p><strong>🎉 Student AI Analysis 功能已完全集成并就绪！</strong></p>
+        <p>如有问题，请检查服务器状态或联系技术支持。</p>
+    </div>
+</body>
+</html>

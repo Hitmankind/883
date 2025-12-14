@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI预警和建议系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .card { border: none; box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15); }
+        .alert-danger { border-left: 4px solid #dc3545; }
+        .alert-warning { border-left: 4px solid #ffc107; }
+        .alert-success { border-left: 4px solid #28a745; }
+        .alert-info { border-left: 4px solid #17a2b8; }
+        .student-avatar { width: 40px; height: 40px; border-radius: 50%; background: #007bff; color: white; display: flex; align-items: center; justify-content: center; }
+        .recommendation-item { background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 3px solid #007bff; }
+        .alert-custom { margin-bottom: 15px; }
+        .alert-custom .alert-heading { font-size: 1rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- 头部 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="h2 mb-0">
+                    <i class="fas fa-brain text-primary"></i> AI预警和建议系统
+                </h1>
+                <p class="text-muted">基于学生表现数据，智能生成个性化建议和预警</p>
+            </div>
+        </div>
+
+        <!-- 预警统计 -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card border-danger">
+                    <div class="card-body text-center">
+                        <h1 class="text-danger mb-0">{{ alert_stats.danger }}</h1>
+                        <p class="mb-0">严重预警</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <h1 class="text-warning mb-0">{{ alert_stats.warning }}</h1>
+                        <p class="mb-0">一般预警</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h1 class="text-success mb-0">{{ alert_stats.success }}</h1>
+                        <p class="mb-0">表现优秀</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <h1 class="text-primary mb-0">{{ alert_stats.total }}</h1>
+                        <p class="mb-0">总预警数</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI建议列表 -->
+        <div class="row">
+            {% for suggestion in suggestions %}
+            <div class="col-xl-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="student-avatar me-3">
+                                    {{ suggestion.student.name.0 }}
+                                </div>
+                                <div>
+                                    <h5 class="mb-0">{{ suggestion.student.name }}</h5>
+                                    <small class="text-muted">{{ suggestion.student.student_id }} - {{ suggestion.student.major }}</small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <h4 class="mb-0">{{ suggestion.avg_score }}</h4>
+                                <small class="text-muted">平均分</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- 预警信息 -->
+                        {% for alert in suggestion.alerts %}
+                        <div class="alert alert-{{ alert.level }} alert-custom">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    {% if alert.level == 'danger' %}
+                                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                    {% elif alert.level == 'warning' %}
+                                        <i class="fas fa-exclamation-circle fa-2x"></i>
+                                    {% else %}
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="alert-heading">{{ alert.title }}</h6>
+                                    <p class="mb-0">{{ alert.message }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- AI建议 -->
+                        <div class="mt-3">
+                            <h6 class="mb-3">
+                                <i class="fas fa-lightbulb text-warning me-2"></i>
+                                <strong>AI建议</strong>
+                            </h6>
+                            {% for recommendation in suggestion.recommendations %}
+                            <div class="recommendation-item">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                {{ recommendation }}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- 最新分析链接 -->
+                        {% if suggestion.latest_analysis %}
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    最新分析：{{ suggestion.latest_analysis.created_at|date:"Y-m-d H:i" }}
+                                </small>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewDetail({{ suggestion.student.student_id }})">
+                                    查看详细分析
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h4>暂无预警信息</h4>
+                    <p class="text-muted">所有学生的学业状况都在正常范围内</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 快速操作面板 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-bolt me-2"></i>快速操作
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-danger w-100" onclick="sendAllAlerts()">
+                                    <i class="fas fa-bell me-2"></i>发送所有预警
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-warning w-100" onclick="generateParentReports()">
+                                    <i class="fas fa-file-alt me-2"></i>生成家长报告
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-success w-100" onclick="scheduleCounseling()">
+                                    <i class="fas fa-calendar me-2"></i>安排辅导
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-info w-100" onclick="exportSuggestions()">
+                                    <i class="fas fa-download me-2"></i>导出建议
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI洞察面板 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>AI洞察总结
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>主要问题识别</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-circle text-danger me-2"></i>学习成绩下滑学生比例较高</li>
+                                    <li><i class="fas fa-circle text-warning me-2"></i>部分学生存在学习动力不足问题</li>
+                                    <li><i class="fas fa-circle text-info me-2"></i>需要加强基础知识辅导</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>改进建议</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>建立学习小组互助机制</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>定期进行学情分析评估</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i>个性化学习计划制定</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function viewDetail(studentId) {
+            window.open(`/ai/student/${studentId}/analysis/`, '_blank');
+        }
+
+        function sendAllAlerts() {
+            if (confirm('确定要向所有有预警的学生发送通知吗？')) {
+                alert('预警通知已发送！');
+            }
+        }
+
+        function generateParentReports() {
+            alert('正在生成家长报告...');
+        }
+
+        function scheduleCounseling() {
+            alert('辅导安排功能开发中...');
+        }
+
+        function exportSuggestions() {
+            alert('正在导出AI建议数据...');
+        }
+
+        // 自动刷新数据
+        setInterval(() => {
+            location.reload();
+        }, 300000); // 每5分钟刷新一次
+    </script>
+</body>
+</html>

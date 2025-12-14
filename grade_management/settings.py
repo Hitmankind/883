@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'students',
+    'ai_analysis',
 ]
 
 MIDDLEWARE = [
@@ -133,3 +134,11 @@ AUTH_USER_MODEL = 'students.CustomUser'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'login'
+
+# DeepSeek API 配置
+DEEPSEEK_API_KEY = 'sk-c644f083be50412da20f753d14bd953c'  # 请替换为您的 DeepSeek API 密钥
+DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1'
+DEEPSEEK_MODEL = 'deepseek-chat'
+DEEPSEEK_MAX_TOKENS = 4000
+DEEPSEEK_TEMPERATURE = 0.7
+DEEPSEEK_TIMEOUT = 60

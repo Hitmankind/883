@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI分析报告生成</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .card { border: none; box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15); }
+        .report-preview { border: 2px dashed #dee2e6; padding: 20px; border-radius: 8px; background: #f8f9fa; }
+        .report-item { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- 头部 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="h2 mb-0">
+                    <i class="fas fa-file-alt text-primary"></i> AI分析报告生成
+                </h1>
+                <p class="text-muted">为学生生成个性化的学情分析报告</p>
+            </div>
+        </div>
+
+        <!-- 报告生成表单 -->
+        <div class="row">
+            <div class="col-xl-4 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>报告设置
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" id="reportForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="student_id" class="form-label">选择学生</label>
+                                <select class="form-select" id="student_id" name="student_id" required>
+                                    <option value="">请选择学生...</option>
+                                    {% for student in students %}
+                                    <option value="{{ student.pk }}">{{ student.name }} ({{ student.student_id }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="analysis_type" class="form-label">分析类型</label>
+                                <select class="form-select" id="analysis_type" name="analysis_type" required>
+                                    <option value="">请选择分析类型...</option>
+                                    {% for type, label in analysis_types %}
+                                    <option value="{{ type }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="report_format" class="form-label">报告格式</label>
+                                <select class="form-select" id="report_format" name="report_format">
+                                    <option value="html">HTML格式</option>
+                                    <option value="json">JSON格式</option>
+                                    <option value="pdf">PDF格式 (开发中)</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-magic me-2"></i>生成报告
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 快速操作 -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-bolt me-2"></i>快速操作
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="generateBatchReports()">
+                                <i class="fas fa-users me-2"></i>批量生成报告
+                            </button>
+                            <button class="btn btn-outline-success" onclick="downloadRecentReports()">
+                                <i class="fas fa-download me-2"></i>下载最近报告
+                            </button>
+                            <button class="btn btn-outline-info" onclick="viewReportTemplates()">
+                                <i class="fas fa-eye me-2"></i>查看报告模板
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 报告预览 -->
+            <div class="col-xl-8 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-eye me-2"></i>报告预览
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="reportPreview" class="report-preview">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-file-alt fa-3x mb-3"></i>
+                                <p class="mb-0">请选择学生和分析类型来生成报告</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最近生成的报告 -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-history me-2"></i>最近生成的报告
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentReports">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-clock fa-2x mb-2"></i>
+                                <p class="mb-0">暂无最近生成的报告</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 表单提交处理
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const studentId = formData.get('student_id');
+            const analysisType = formData.get('analysis_type');
+            const reportFormat = formData.get('report_format');
+
+            // 显示加载状态
+            const preview = document.getElementById('reportPreview');
+            preview.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">生成中...</span>
+                    </div>
+                    <p class="mt-2">正在生成AI分析报告...</p>
+                </div>
+            `;
+
+            // 发送请求生成报告
+            fetch('/ai/report/generate/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayReport(data.report_data, reportFormat);
+                    addToRecentReports(data.report_data);
+                } else {
+                    showError(data.message || '生成报告失败');
+                }
+            })
+            .catch(error => {
+                showError('网络错误: ' + error.message);
+            });
+        });
+
+        function displayReport(reportData, format) {
+            const preview = document.getElementById('reportPreview');
+
+            if (format === 'html') {
+                preview.innerHTML = `
+                    <div class="report-item">
+                        <h5 class="mb-3">
+                            <i class="fas fa-user me-2"></i>学生信息
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>姓名:</strong> ${reportData.student_info.name}</p>
+                                <p><strong>学号:</strong> ${reportData.student_info.student_id}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>专业:</strong> ${reportData.student_info.major}</p>
+                                <p><strong>学院:</strong> ${reportData.student_info.college}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="report-item">
+                        <h5 class="mb-3">
+                            <i class="fas fa-chart-line me-2"></i>${reportData.analysis.type}
+                        </h5>
+                        <h6 class="mb-2">${reportData.analysis.title}</h6>
+                        <div class="analysis-result">
+                            ${reportData.analysis.result.replace(/\n/g, '<br>')}
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>生成时间: ${reportData.analysis.created_at}
+                                {% if reportData.analysis.confidence %}
+                                <span class="ms-3">
+                                    <i class="fas fa-brain me-1"></i>AI置信度: ${reportData.analysis.confidence}%
+                                </span>
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button class="btn btn-primary" onclick="downloadReport('${format}')">
+                            <i class="fas fa-download me-2"></i>下载报告
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="printReport()">
+                            <i class="fas fa-print me-2"></i>打印报告
+                        </button>
+                    </div>
+                `;
+            } else {
+                // JSON格式显示
+                preview.innerHTML = `
+                    <pre class="bg-dark text-light p-3 rounded"><code>${JSON.stringify(reportData, null, 2)}</code></pre>
+                `;
+            }
+        }
+
+        function showError(message) {
+            const preview = document.getElementById('reportPreview');
+            preview.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${message}
+                </div>
+            `;
+        }
+
+        function addToRecentReports(reportData) {
+            const recentDiv = document.getElementById('recentReports');
+            const reportItem = `
+                <div class="report-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">${reportData.student_info.name} - ${reportData.analysis.type}</h6>
+                            <small class="text-muted">${reportData.analysis.created_at}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewReport()">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            if (recentDiv.innerHTML.includes('暂无最近生成的报告')) {
+                recentDiv.innerHTML = reportItem;
+            } else {
+                recentDiv.innerHTML = reportItem + recentDiv.innerHTML;
+            }
+        }
+
+        function generateBatchReports() {
+            alert('批量生成报告功能开发中...');
+        }
+
+        function downloadRecentReports() {
+            alert('下载最近报告功能开发中...');
+        }
+
+        function viewReportTemplates() {
+            alert('查看报告模板功能开发中...');
+        }
+
+        function downloadReport(format) {
+            alert(`下载${format.toUpperCase()}格式报告功能开发中...`);
+        }
+
+        function printReport() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
