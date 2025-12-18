@@ -936,3 +936,39 @@ def ai_intervention_dashboard(request):
     """AI教学干预仪表板"""
     # 这里可以添加实际的干预数据处理逻辑
     return render(request, 'students/ai_intervention_dashboard.html')
+
+
+@login_required
+def my_ai_analysis(request):
+    """Student personal AI analysis page"""
+    # Ensure the user is a student
+    if request.user.role != 'student':
+        messages.error(request, 'This page is only available for students.')
+        return redirect('students:index')
+
+    try:
+        student = request.user.student
+    except Student.DoesNotExist:
+        messages.error(request, 'Student profile not found.')
+        return redirect('students:index')
+
+    # Get recent analyses for this student
+    from ai_analysis.models import StudentAnalysis
+    recent_analyses = StudentAnalysis.objects.filter(
+        student=student,
+        status='completed'
+    ).order_by('-created_at')[:5]
+
+    # Get academic stats
+    student_scores = Score.objects.filter(student=student)
+    total_scores = student_scores.count()
+    avg_score = student_scores.aggregate(avg=Avg('score'))['avg'] or 0
+
+    context = {
+        'student': student,
+        'recent_analyses': recent_analyses,
+        'total_scores': total_scores,
+        'average_score': round(avg_score, 1),
+    }
+
+    return render(request, 'students/my_ai_analysis.html', context)

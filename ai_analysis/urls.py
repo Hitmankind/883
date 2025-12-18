@@ -8,6 +8,7 @@ from . import views_enhanced
 from . import views_simple
 from . import test_views as test
 from . import demo
+from . import agent_views
 
 urlpatterns = [
     # 分析仪表板
@@ -51,4 +52,9 @@ urlpatterns = [
     path('history/', views_enhanced.ai_analysis_history, name='ai_analysis_history'),
     path('suggestions/', views_enhanced.ai_suggestions_system, name='ai_suggestions_system'),
     path('ajax/', views_enhanced.ai_analysis_ajax, name='ai_analysis_ajax'),
+
+    # AI Agent Analysis Routes
+    path('agent/analyze/<str:student_id>/', agent_views.start_ai_agent_analysis, name='agent_analyze'),
+    path('agent/status/<int:analysis_id>/', agent_views.get_analysis_status, name='agent_status'),
+    path('agent/history/<str:student_id>/', agent_views.get_student_analysis_history, name='agent_history'),
 ]

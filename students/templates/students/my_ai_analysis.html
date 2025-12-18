@@ -1,0 +1,373 @@
+{% extends 'students/base.html' %}
+
+{% block title %}My AI Analysis - WiseMentor{% endblock %}
+
+{% block page_title %}
+<div class="d-flex align-items-center">
+    <i class="bi bi-person-badge text-primary me-3"></i>
+    My AI Analysis
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Student Info Card -->
+<div class="card mb-4 bg-gradient-to-r from-primary to-blue-600 text-white">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <div class="w-24 h-24 bg-white bg-opacity-20 rounded-full mx-auto flex items-center justify-center">
+                    <i class="bi bi-person fs-5"></i>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h3 class="font-bold mb-1">{{ student.name }}</h3>
+                <div class="row">
+                    <div class="col-sm-6 mb-1">
+                        <small class="text-white-700">Student ID:</small> <span>{{ student.student_id }}</span>
+                    </div>
+                    <div class="col-sm-6 mb-1">
+                        <small class="text-white-700">Class:</small> <span>{{ student.class_name }}</span>
+                    </div>
+                    <div class="col-sm-6 mb-1">
+                        <small class="text-white-700">Major:</small> <span>{{ student.major }}</span>
+                    </div>
+                    <div class="col-sm-6 mb-1">
+                        <small class="text-white-700">Average Score:</small> <span class="badge bg-white text-primary">{{ average_score }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-warning text-white mb-2" id="my-ai-analysis-btn" onclick="startMyAIAgentAnalysis('{{ student.student_id }}')">
+                    <i class="bi bi-cpu me-2"></i>Start AI Analysis
+                </button>
+                <button class="btn btn-white text-primary mb-2" onclick="viewAnalysisHistory()">
+                    <i class="bi bi-clock-history me-2"></i>View History
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Status Card -->
+<div class="card mb-4" id="analysis-status-card" style="display: none;">
+    <div class="card-body">
+        <div class="d-flex align-items-center">
+            <div class="spinner-border text-primary me-3" role="status">
+                <span class="visually-hidden">Analyzing...</span>
+            </div>
+            <div>
+                <h6 class="mb-1">AI Analysis in Progress</h6>
+                <small class="text-muted">Our AI agent is analyzing your academic performance...</small>
+            </div>
+        </div>
+        <div class="progress mt-3" style="height: 6px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Analyses -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history text-secondary me-2"></i>
+                    Recent AI Analyses
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_analyses %}
+                    {% for analysis in recent_analyses %}
+                    <div class="border-bottom pb-3 mb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ analysis.title }}</h6>
+                                <p class="text-muted mb-2">
+                                    <i class="bi bi-calendar3 me-1"></i>
+                                    {{ analysis.created_at|date:"Y-m-d H:i" }}
+                                    {% if analysis.analyzed_at %}
+                                        • Completed: {{ analysis.analyzed_at|date:"H:i" }}
+                                    {% endif %}
+                                </p>
+                                {% if analysis.analysis_result %}
+                                    <div class="analysis-summary">
+                                        {{ analysis.analysis_result|truncatewords:30 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="text-end">
+                                {% if analysis.ai_confidence %}
+                                    <small class="badge bg-primary">
+                                        {{ analysis.ai_confidence|floatformat:2 }} confidence
+                                    </small>
+                                {% endif %}
+                                {% if analysis.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif analysis.status == 'processing' %}
+                                    <span class="badge bg-warning">Processing</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if analysis.analysis_result %}
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewAnalysisDetails({{ analysis.id }})">
+                                <i class="bi bi-eye me-1"></i>View Details
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-robot fs-1 mb-3"></i>
+                        <h5>No AI Analyses Yet</h5>
+                        <p>Click "Start AI Analysis" to get personalized insights about your academic performance.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Academic Stats -->
+        <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up text-info me-2"></i>
+                    Academic Statistics
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-3">
+                            <h4 class="mb-1 text-primary">{{ total_scores }}</h4>
+                            <small class="text-muted">Total Assessments</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="border rounded p-3">
+                            <h4 class="mb-1 text-success">{{ average_score }}</h4>
+                            <small class="text-muted">Average Score</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Insights -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightbulb text-warning me-2"></i>
+                    AI Insights
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>AI-Powered Analysis</strong>
+                    <p class="mb-0 mt-2">Our AI agent analyzes your academic performance to provide personalized insights and recommendations.</p>
+                </div>
+
+                <div class="mt-3">
+                    <h6>What AI Analysis Provides:</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Strength identification</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Improvement areas</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Personalized recommendations</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Study strategies</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Future planning guidance</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Details Modal -->
+<div class="modal fade" id="analysisDetailsModal" tabindex="-1" aria-labelledby="analysisDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="analysisDetailsModalLabel">AI Analysis Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="analysisDetailsContent">
+                <!-- Content will be loaded via AJAX -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+function startMyAIAgentAnalysis(studentId) {
+    const btn = document.getElementById('my-ai-analysis-btn');
+    const statusCard = document.getElementById('analysis-status-card');
+    const originalText = btn.innerHTML;
+
+    // Disable button and show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>AI Analyzing...';
+    statusCard.style.display = 'block';
+
+    // Make AJAX request to start AI analysis
+    fetch(`/ai/agent/analyze/${studentId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showNotification('AI analysis started successfully! This may take a few moments.', 'success');
+
+            // Start polling for analysis completion
+            pollMyAnalysisStatus(data.analysis_id, studentId);
+        } else {
+            showNotification('Error: ' + (data.error || 'Failed to start analysis'), 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            statusCard.style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Network error occurred. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        statusCard.style.display = 'none';
+    });
+}
+
+function pollMyAnalysisStatus(analysisId, studentId) {
+    const maxAttempts = 60; // Maximum 5 minutes (60 * 5 seconds)
+    let attempts = 0;
+
+    const pollInterval = setInterval(() => {
+        attempts++;
+
+        fetch(`/ai/agent/status/${analysisId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'completed') {
+                clearInterval(pollInterval);
+                showNotification('AI analysis completed! Refreshing...', 'success');
+                // Refresh the page to show updated analysis
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else if (data.status === 'failed') {
+                clearInterval(pollInterval);
+                showNotification('Analysis failed: ' + (data.error || 'Unknown error'), 'error');
+                const btn = document.getElementById('my-ai-analysis-btn');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cpu me-2"></i>Start AI Analysis';
+                document.getElementById('analysis-status-card').style.display = 'none';
+            } else if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                showNotification('Analysis timed out. Please try again later.', 'warning');
+                const btn = document.getElementById('my-ai-analysis-btn');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cpu me-2"></i>Start AI Analysis';
+                document.getElementById('analysis-status-card').style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Polling error:', error);
+            if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                showNotification('Failed to check analysis status', 'error');
+                const btn = document.getElementById('my-ai-analysis-btn');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cpu me-2"></i>Start AI Analysis';
+                document.getElementById('analysis-status-card').style.display = 'none';
+            }
+        });
+    }, 5000); // Poll every 5 seconds
+}
+
+function viewAnalysisDetails(analysisId) {
+    fetch(`/ai/agent/status/${analysisId}/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.analysis_result) {
+            document.getElementById('analysisDetailsContent').innerHTML = `
+                <div class="analysis-details">
+                    <div class="mb-3">
+                        <strong>Analysis Date:</strong> ${data.created_at ? new Date(data.created_at).toLocaleString() : 'N/A'}
+                    </div>
+                    <div class="mb-3">
+                        <strong>AI Confidence:</strong> ${data.ai_confidence ? (data.ai_confidence * 100).toFixed(1) + '%' : 'N/A'}
+                    </div>
+                    <div class="analysis-result">
+                        <h6>Analysis Result:</h6>
+                        <div style="white-space: pre-line;">${data.analysis_result}</div>
+                    </div>
+                </div>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('analysisDetailsModal'));
+            modal.show();
+        } else {
+            showNotification('Failed to load analysis details', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Failed to load analysis details', 'error');
+    });
+}
+
+function viewAnalysisHistory() {
+    // This could redirect to a full history page or open a modal
+    window.location.href = `/ai/agent/history/{{ student.student_id }}/`;
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Notification system
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -48,4 +48,7 @@ urlpatterns = [
     
     # 数据同步
     path('sync/', views.sync_data, name='sync_data'),
+
+    # Student AI Analysis
+    path('my-ai-analysis/', views.my_ai_analysis, name='my_ai_analysis'),
 ]

@@ -37,6 +37,9 @@
                 </div>
             </div>
             <div class="col-md-4 text-end">
+                <button class="btn btn-warning text-white mb-2" id="ai-agent-analysis-btn" onclick="startAIAgentAnalysis('{{ student.student_id }}')">
+                    <i class="bi bi-cpu me-2"></i>AI Agent Analysis
+                </button>
                 <button class="btn btn-white text-primary mb-2">Generate PDF Report</button>
                 <button class="btn btn-white btn-outline-light">Schedule Meeting</button>
             </div>
@@ -606,5 +609,127 @@ const knowledgeChart = new Chart(knowledgeCtx, {
         cutout: '70%'
     }
 });
+
+// AI Agent Analysis Function
+function startAIAgentAnalysis(studentId) {
+    const btn = document.getElementById('ai-agent-analysis-btn');
+    const originalText = btn.innerHTML;
+
+    // Disable button and show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>AI Analyzing...';
+
+    // Make AJAX request to start AI analysis
+    fetch(`/ai/agent/analyze/${studentId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showNotification('AI analysis started successfully! This may take a few moments.', 'success');
+
+            // Start polling for analysis completion
+            pollAnalysisStatus(data.analysis_id, studentId);
+        } else {
+            showNotification('Error: ' + (data.error || 'Failed to start analysis'), 'error');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Network error occurred. Please try again.', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+
+// Poll for analysis completion
+function pollAnalysisStatus(analysisId, studentId) {
+    const maxAttempts = 60; // Maximum 5 minutes (60 * 5 seconds)
+    let attempts = 0;
+
+    const pollInterval = setInterval(() => {
+        attempts++;
+
+        fetch(`/ai/agent/status/${analysisId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'completed') {
+                clearInterval(pollInterval);
+                showNotification('AI analysis completed! Refreshing results...', 'success');
+                // Refresh the page to show updated analysis
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else if (data.status === 'failed') {
+                clearInterval(pollInterval);
+                showNotification('Analysis failed: ' + (data.error || 'Unknown error'), 'error');
+                const btn = document.getElementById('ai-agent-analysis-btn');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cpu me-2"></i>AI Agent Analysis';
+            } else if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                showNotification('Analysis timed out. Please try again later.', 'warning');
+                const btn = document.getElementById('ai-agent-analysis-btn');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cpu me-2"></i>AI Agent Analysis';
+            }
+        })
+        .catch(error => {
+            console.error('Polling error:', error);
+            if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                showNotification('Failed to check analysis status', 'error');
+                const btn = document.getElementById('ai-agent-analysis-btn');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cpu me-2"></i>AI Agent Analysis';
+            }
+        });
+    }, 5000); // Poll every 5 seconds
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Notification system
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
+}
 </script>
 {% endblock %}
