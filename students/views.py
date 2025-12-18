@@ -148,7 +148,7 @@ def student_add(request):
             student.save()
             student.save_to_file()  # 保存到文件
             messages.success(request, '学生信息添加成功！')
-            return redirect('student_list')
+            return redirect('students:student_list')
         except ValueError as e:
             messages.error(request, f'数据格式错误：{str(e)}')
         except Exception as e:
@@ -179,7 +179,7 @@ def student_edit(request, student_id):
             student.save()
             student.save_to_file()
             messages.success(request, '学生信息修改成功！')
-            return redirect('student_list')
+            return redirect('students:student_list')
         except Exception as e:
             messages.error(request, f'修改失败：{str(e)}')
     
@@ -277,7 +277,7 @@ def course_add(request):
             course.save()
             course.save_to_file()
             messages.success(request, '课程信息添加成功！')
-            return redirect('course_list')
+            return redirect('students:course_list')
         except Exception as e:
             messages.error(request, f'添加失败：{str(e)}')
     
@@ -297,7 +297,7 @@ def course_edit(request, course_id):
             course.save()
             course.save_to_file()
             messages.success(request, '课程信息修改成功！')
-            return redirect('course_list')
+            return redirect('students:course_list')
         except Exception as e:
             messages.error(request, f'修改失败：{str(e)}')
     
@@ -450,7 +450,7 @@ def score_batch_input(request):
                         continue
             
             messages.success(request, f'成功录入 {success_count} 条成绩！')
-            return redirect('score_list')
+            return redirect('students:score_list')
         except Course.DoesNotExist:
             messages.error(request, '课程不存在！')
     
@@ -501,7 +501,7 @@ def score_single_input(request):
             
             score_obj.save_to_file()
             messages.success(request, '成绩录入成功！')
-            return redirect('score_single_input')
+            return redirect('students:score_single_input')
         except (Student.DoesNotExist, Course.DoesNotExist):
             messages.error(request, '学生或课程不存在！')
         except ValueError:
@@ -530,13 +530,13 @@ def score_edit(request, score_id):
             score.save()
             score.save_to_file()
             messages.success(request, '成绩修改成功！')
-            return redirect('score_list')
+            return redirect('students:score_list')
         except ValueError:
             messages.error(request, '成绩格式不正确！')
         except Exception as e:
             messages.error(request, f'修改失败：{str(e)}')
     
-    return render(request, 'students/score_edit.html', {'score': score})
+    return render(request, 'students/score_form.html', {'score': score})
 
 
 @teacher_required
