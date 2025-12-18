@@ -26,7 +26,7 @@
                         <small class="text-white-700">Student ID:</small> <span>{{ student.student_id }}</span>
                     </div>
                     <div class="col-sm-6 mb-1">
-                        <small class="text-white-700">Class:</small> <span>{{ student.class_name }}</span>
+                        <small class="text-white-700">College:</small> <span>{{ student.college }}</span>
                     </div>
                     <div class="col-sm-6 mb-1">
                         <small class="text-white-700">Major:</small> <span>{{ student.major }}</span>
@@ -159,7 +159,7 @@
         </div>
 
         <!-- AI Insights -->
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header bg-white">
                 <h6 class="mb-0">
                     <i class="bi bi-lightbulb text-warning me-2"></i>
@@ -182,6 +182,37 @@
                         <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Study strategies</li>
                         <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Future planning guidance</li>
                     </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Personalized Recommendations -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h6 class="mb-0">
+                    <i class="bi bi-clipboard-check text-primary me-2"></i>
+                    AI Personalized Recommendations
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-stars me-2"></i>
+                    <strong>Personalized Intervention Plans</strong>
+                    <p class="mb-0 mt-2">Get AI-generated intervention plans based on your latest course performance and learning patterns.</p>
+                </div>
+
+                <div class="text-center mt-3">
+                    <button class="btn btn-primary btn-lg" id="my-intervention-btn" onclick="generateMyInterventionPlan('{{ student.student_id }}')">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Generate Intervention Plan
+                    </button>
+                </div>
+
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        This will analyze your recent academic performance and create a personalized intervention plan with specific recommendations, resources, and action steps.
+                    </small>
                 </div>
             </div>
         </div>
@@ -208,6 +239,153 @@
 
 <!-- JavaScript -->
 <script>
+function generateMyInterventionPlan(studentId) {
+    const btn = document.getElementById('my-intervention-btn');
+    const originalText = btn.innerHTML;
+
+    // Show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Generating...';
+
+    // Generate intervention plan
+    fetch("{% url 'students:generate_intervention_plan' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `student_id=${encodeURIComponent(studentId)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayMyInterventionPlan(data.intervention_plan);
+        } else {
+            showNotification('Error: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error generating intervention plan. Please try again.', 'error');
+    })
+    .finally(() => {
+        // Reset button
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+function displayMyInterventionPlan(plan) {
+    // Create modal to display the intervention plan
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clipboard-check me-2"></i>
+                        Your Personalized Intervention Plan
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-person me-2"></i>Your Academic Overview</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Overall Average:</strong> ${plan.student_info.overall_average}<br>
+                                <strong>Recent Performance:</strong> ${plan.student_info.recent_performance}<br>
+                                <strong>Total Courses:</strong> ${plan.student_info.total_courses}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Areas Needing Support:</strong> ${plan.student_info.struggling_courses_count}<br>
+                                <strong>Priority Level:</strong> <span class="badge bg-${getPriorityColor(plan.priority_level)}">${plan.priority_level.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6><i class="bi bi-list-task me-2"></i>Your Personalized Recommendations</h6>
+                    <div class="space-y-3">
+                        ${plan.interventions.map(intervention => `
+                            <div class="card border-left-${getPriorityColor(intervention.priority)}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-1">${intervention.title}</h6>
+                                        <span class="badge bg-${getPriorityColor(intervention.priority)}">${intervention.priority}</span>
+                                    </div>
+                                    <p class="text-muted small mb-2">${intervention.description}</p>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong><i class="bi bi-check2-square me-1"></i>Action Steps:</strong>
+                                            <ul class="small mb-2">
+                                                ${intervention.actions.map(action => `<li>${action}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong><i class="bi bi-book me-1"></i>Learning Resources:</strong>
+                                            <ul class="small mb-2">
+                                                ${intervention.resources.map(resource => `<li>${resource}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="row text-muted small">
+                                        <div class="col-md-4">
+                                            <i class="bi bi-calendar me-1"></i><strong>Timeline:</strong> ${intervention.timeline}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <i class="bi bi-trophy me-1"></i><strong>Goal:</strong> ${intervention.success_criteria}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <i class="bi bi-person-badge me-1"></i><strong>Support:</strong> ${intervention.responsible_teacher}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="alert alert-success mt-3">
+                        <h6><i class="bi bi-lightbulb me-2"></i>Next Steps</h6>
+                        <p class="mb-0">Talk to your teacher or academic advisor about implementing these recommendations. They can provide additional support and resources to help you succeed!</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="printMyInterventionPlan()">
+                        <i class="bi bi-printer me-2"></i>Print Plan
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
+
+    // Remove modal from DOM after hidden
+    modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
+}
+
+function getPriorityColor(priority) {
+    switch (priority.toLowerCase()) {
+        case 'critical': return 'danger';
+        case 'high': return 'warning';
+        case 'medium': return 'info';
+        case 'low': return 'success';
+        default: return 'secondary';
+    }
+}
+
+function printMyInterventionPlan() {
+    window.print();
+}
+
 function startMyAIAgentAnalysis(studentId) {
     const btn = document.getElementById('my-ai-analysis-btn');
     const statusCard = document.getElementById('analysis-status-card');

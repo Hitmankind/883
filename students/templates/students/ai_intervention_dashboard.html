@@ -437,9 +437,22 @@
             </div>
             <div class="card-body">
                 <div class="space-y-3">
-                    <button class="btn btn-block btn-primary">
+                    <!-- Student Selection -->
+                    <div class="mb-3">
+                        <label for="student-select" class="form-label">
+                            <i class="bi bi-person me-2"></i>Select Student for Intervention Plan
+                        </label>
+                        <select class="form-select" id="student-select">
+                            <option value="">Choose a student...</option>
+                            {% for student in students %}
+                            <option value="{{ student.student_id }}">{{ student.name }} ({{ student.student_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button class="btn btn-block btn-primary" id="generate-intervention-btn">
                         <i class="bi bi-plus-circle me-2"></i>
-                        Create Custom Intervention
+                        Generate Intervention Plan
                     </button>
                     <button class="btn btn-block btn-outline-primary">
                         <i class="bi bi-filter-circle me-2"></i>
@@ -576,5 +589,174 @@ const effectivenessChart = new Chart(effectivenessCtx, {
         }
     }
 });
+
+// Intervention Plan Generation
+document.addEventListener('DOMContentLoaded', function() {
+    const generateBtn = document.getElementById('generate-intervention-btn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', function() {
+    const studentSelect = document.getElementById('student-select');
+    const studentId = studentSelect.value;
+
+    if (!studentId) {
+        alert('Please select a student first.');
+        return;
+    }
+
+    // Show loading state
+    const originalText = this.innerHTML;
+    this.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Generating...';
+    this.disabled = true;
+
+    // Generate intervention plan
+    fetch("{% url 'students:generate_intervention_plan' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `student_id=${encodeURIComponent(studentId)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayInterventionPlan(data.intervention_plan);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error generating intervention plan. Please try again.');
+    })
+    .finally(() => {
+        // Reset button
+        this.innerHTML = originalText;
+        this.disabled = false;
+    });
+});
+    }
+});
+
+function displayInterventionPlan(plan) {
+    // Create modal to display the intervention plan
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clipboard-check me-2"></i>
+                        Intervention Plan for ${plan.student_info.name} (${plan.student_info.student_id})
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-person me-2"></i>Student Overview</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Overall Average:</strong> ${plan.student_info.overall_average}<br>
+                                <strong>Recent Performance:</strong> ${plan.student_info.recent_performance}<br>
+                                <strong>Total Courses:</strong> ${plan.student_info.total_courses}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Struggling Courses:</strong> ${plan.student_info.struggling_courses_count}<br>
+                                <strong>Priority Level:</strong> <span class="badge bg-${getPriorityColor(plan.priority_level)}">${plan.priority_level.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6><i class="bi bi-list-task me-2"></i>Recommended Interventions</h6>
+                    <div class="space-y-3">
+                        ${plan.interventions.map(intervention => `
+                            <div class="card border-left-${getPriorityColor(intervention.priority)}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-1">${intervention.title}</h6>
+                                        <span class="badge bg-${getPriorityColor(intervention.priority)}">${intervention.priority}</span>
+                                    </div>
+                                    <p class="text-muted small mb-2">${intervention.description}</p>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <strong><i class="bi bi-check2-square me-1"></i>Actions:</strong>
+                                            <ul class="small mb-2">
+                                                ${intervention.actions.map(action => `<li>${action}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong><i class="bi bi-book me-1"></i>Resources:</strong>
+                                            <ul class="small mb-2">
+                                                ${intervention.resources.map(resource => `<li>${resource}</li>`).join('')}
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="row text-muted small">
+                                        <div class="col-md-4">
+                                            <i class="bi bi-calendar me-1"></i><strong>Timeline:</strong> ${intervention.timeline}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <i class="bi bi-trophy me-1"></i><strong>Success Criteria:</strong> ${intervention.success_criteria}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <i class="bi bi-person-badge me-1"></i><strong>Responsible:</strong> ${intervention.responsible_teacher}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="printInterventionPlan()">
+                        <i class="bi bi-printer me-2"></i>Print Plan
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
+
+    // Remove modal from DOM after hidden
+    modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
+}
+
+function getPriorityColor(priority) {
+    switch (priority.toLowerCase()) {
+        case 'critical': return 'danger';
+        case 'high': return 'warning';
+        case 'medium': return 'info';
+        case 'low': return 'success';
+        default: return 'secondary';
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function printInterventionPlan() {
+    window.print();
+}
 </script>
 {% endblock %}

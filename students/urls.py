@@ -41,6 +41,7 @@ urlpatterns = [
     path('ai-dashboard/', views.ai_learning_dashboard, name='ai_learning_dashboard'),
     path('student-ai-analysis/<str:student_id>/', views.student_ai_analysis, name='student_ai_analysis'),
     path('ai-intervention-dashboard/', views.ai_intervention_dashboard, name='ai_intervention_dashboard'),
+    path('generate-intervention-plan/', views.generate_intervention_plan, name='generate_intervention_plan'),
     
     # AJAX接口
     path('api/course-students/', views.get_course_students, name='get_course_students'),

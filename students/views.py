@@ -934,8 +934,244 @@ def student_ai_analysis(request, student_id):
 @teacher_required
 def ai_intervention_dashboard(request):
     """AI教学干预仪表板"""
-    # 这里可以添加实际的干预数据处理逻辑
-    return render(request, 'students/ai_intervention_dashboard.html')
+    # Get all students for the dropdown
+    students = Student.objects.all().order_by('student_id')
+    return render(request, 'students/ai_intervention_dashboard.html', {'students': students})
+
+
+@teacher_required
+def generate_intervention_plan(request):
+    """Generate intervention plan based on latest student course score data"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+    try:
+        student_id = request.POST.get('student_id')
+        if not student_id:
+            return JsonResponse({'success': False, 'message': 'Student ID is required'})
+
+        student = get_object_or_404(Student, student_id=student_id)
+
+        # Collect latest course score data
+        scores = Score.objects.filter(student=student).select_related('course').order_by('-date')
+
+        if not scores.exists():
+            return JsonResponse({
+                'success': False,
+                'message': f'No score data available for student {student_id}'
+            })
+
+        # Analyze student performance and generate intervention plan
+        intervention_plan = generate_intervention_recommendations(student, scores)
+
+        return JsonResponse({
+            'success': True,
+            'intervention_plan': intervention_plan
+        })
+
+    except Student.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Student not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error generating intervention plan: {str(e)}'})
+
+
+def generate_intervention_recommendations(student, scores):
+    """
+    Generate personalized intervention recommendations based on student performance
+    """
+    # Calculate key metrics
+    avg_score = scores.aggregate(avg=Avg('score'))['avg'] or 0
+    recent_scores = scores[:10]  # Last 10 scores
+    recent_avg = sum(s.score for s in recent_scores) / len(recent_scores) if recent_scores else 0
+
+    # Group scores by course
+    course_performance = {}
+    for score in scores:
+        if score.course.course_id not in course_performance:
+            course_performance[score.course.course_id] = []
+        course_performance[score.course.course_id].append(score.score)
+
+    # Calculate course averages
+    course_averages = {}
+    for course_id, course_scores in course_performance.items():
+        course_averages[course_id] = sum(course_scores) / len(course_scores)
+
+    # Identify struggling courses (below 70)
+    struggling_courses = []
+    for course_id, avg in course_averages.items():
+        if avg < 70:
+            course_obj = scores.filter(course__course_id=course_id).first().course
+            struggling_courses.append({
+                'course_id': course_id,
+                'course_name': course_obj.course_name,
+                'average_score': avg,
+                'latest_score': course_performance[course_id][-1] if course_performance[course_id] else 0
+            })
+
+    # Sort struggling courses by severity (lowest average first)
+    struggling_courses.sort(key=lambda x: x['average_score'])
+
+    # Generate intervention plan based on performance
+    intervention_plan = {
+        'student_info': {
+            'student_id': student.student_id,
+            'name': student.name,
+            'overall_average': round(avg_score, 1),
+            'recent_performance': round(recent_avg, 1),
+            'total_courses': len(course_averages),
+            'struggling_courses_count': len(struggling_courses)
+        },
+        'priority_level': 'high' if len(struggling_courses) >= 3 else 'medium' if len(struggling_courses) >= 1 else 'low',
+        'interventions': []
+    }
+
+    # Generate specific interventions for struggling courses
+    for i, course in enumerate(struggling_courses[:5]):  # Top 5 struggling courses
+        priority = 'Critical' if i == 0 and course['average_score'] < 60 else 'High' if i < 2 else 'Medium'
+
+        intervention = {
+            'title': f"{course['course_name']} Performance Improvement",
+            'priority': priority,
+            'category': 'Academic Support',
+            'description': f"Student is struggling with {course['course_name']} (Avg: {course['average_score']:.1f}, Latest: {course['latest_score']:.1f})",
+            'actions': generate_course_specific_actions(course['average_score'], course['course_name']),
+            'resources': generate_course_resources(course['course_name'], course['average_score']),
+            'timeline': '4-6 weeks',
+            'success_criteria': f"Improve average score to 75+ in {course['course_name']}",
+            'responsible_teacher': 'Subject Teacher',
+            'progress_monitoring': 'Weekly assessment reviews'
+        }
+        intervention_plan['interventions'].append(intervention)
+
+    # Add general academic support if overall performance is low
+    if avg_score < 65:
+        intervention_plan['interventions'].append({
+            'title': 'Overall Academic Performance Enhancement',
+            'priority': 'High',
+            'category': 'General Support',
+            'description': f"Student needs comprehensive academic support (Overall Average: {avg_score:.1f})",
+            'actions': [
+                'Schedule twice-weekly tutoring sessions',
+                'Implement daily study schedule monitoring',
+                'Provide study skills workshops',
+                'Create peer study groups',
+                'Weekly progress meetings with academic advisor'
+            ],
+            'resources': [
+                'Study skills development resources',
+                'Time management tools',
+                'Peer tutoring program',
+                'Academic success workshops'
+            ],
+            'timeline': '8-12 weeks',
+            'success_criteria': 'Achieve overall average of 70+',
+            'responsible_teacher': 'Academic Advisor',
+            'progress_monitoring': 'Bi-weekly comprehensive reviews'
+        })
+
+    # Add motivation support if recent performance declined
+    if len(recent_scores) >= 10:
+        # Convert to list to enable negative indexing
+        scores_list = list(recent_scores)
+        early_recent = scores_list[-5:]  # Last 5 scores (earlier in time)
+        late_recent = scores_list[:5]    # First 5 scores (more recent)
+        early_avg = sum(s.score for s in early_recent) / len(early_recent)
+        late_avg = sum(s.score for s in late_recent) / len(late_recent)
+
+        if late_avg < early_avg - 10:  # Decline of 10+ points
+            intervention_plan['interventions'].append({
+                'title': 'Motivation and Engagement Support',
+                'priority': 'Medium',
+                'category': 'Behavioral Support',
+                'description': f'Student shows declining performance trend (From {early_avg:.1f} to {late_avg:.1f})',
+                'actions': [
+                    'Conduct motivational counseling session',
+                    'Set achievable short-term goals',
+                    'Identify and address learning barriers',
+                    'Implement positive reinforcement strategies',
+                    'Engage parents/guardians in support plan'
+                ],
+                'resources': [
+                    'Student counseling services',
+                    'Goal-setting worksheets',
+                    'Motivation tracking tools',
+                    'Parent communication templates'
+                ],
+                'timeline': '6-8 weeks',
+                'success_criteria': 'Reverse declining trend and show improvement',
+                'responsible_teacher': 'School Counselor',
+                'progress_monitoring': 'Weekly motivation and engagement assessments'
+            })
+
+    return intervention_plan
+
+
+def generate_course_specific_actions(average_score, course_name):
+    """Generate specific actions based on course performance"""
+    actions = []
+
+    if average_score < 50:
+        actions.extend([
+            'Immediate one-on-one tutoring intervention',
+            'Comprehensive diagnostic assessment',
+            'Modified curriculum requirements',
+            'Daily check-ins and progress monitoring',
+            'Additional practice assignments with immediate feedback'
+        ])
+    elif average_score < 65:
+        actions.extend([
+            'Weekly tutoring sessions',
+            'Targeted practice on weak areas',
+            'Study group participation',
+            'Increased formative assessments',
+            'Peer mentorship assignment'
+        ])
+    else:
+        actions.extend([
+            'Weekly progress monitoring',
+            'Targeted practice exercises',
+            'Study skill enhancement',
+            'Exam preparation workshops'
+        ])
+
+    # Add course-specific actions
+    if 'Math' in course_name:
+        actions.append('Step-by-step problem-solving techniques')
+        actions.append('Math concept visualization tools')
+    elif 'English' in course_name or 'Language' in course_name:
+        actions.append('Reading comprehension strategies')
+        actions.append('Writing practice with feedback')
+    elif 'Science' in course_name:
+        actions.append('Laboratory practice sessions')
+        actions.append('Concept mapping for complex topics')
+
+    return actions[:6]  # Limit to 6 actions
+
+
+def generate_course_resources(course_name, average_score):
+    """Generate course-specific learning resources"""
+    resources = []
+
+    # General resources
+    resources.extend([
+        f'YouTube: {course_name} tutorial videos',
+        f'Khan Academy {course_name} resources',
+        'Online practice problems and exercises',
+        'Textbook study guides and supplements'
+    ])
+
+    # Performance-specific resources
+    if average_score < 60:
+        resources.append('Remedial learning materials')
+        resources.append('Step-by-step video tutorials')
+    elif average_score < 75:
+        resources.append('Intermediate practice materials')
+        resources.append('Concept reinforcement exercises')
+    else:
+        resources.append('Advanced practice challenges')
+        resources.append('Extension activities')
+
+    return resources[:5]  # Limit to 5 resources
 
 
 @login_required
