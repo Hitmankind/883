@@ -151,7 +151,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'my_ai_analysis' %}active{% endif %}" href="{% url 'students:my_ai_analysis' %}">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'my_ai_analysis' %}active{% endif %}" href="#" onclick="showStudentAIAnalysisModal(); return false;">
                                 <i class="bi bi-person-lines-fill"></i> My AI Analysis
                             </a>
                         </li>
@@ -197,6 +197,11 @@
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'student_transcript' %}active{% endif %}" href="{% url 'students:student_transcript' user.student.student_id %}">
                                 <i class="bi bi-file-text"></i> My Transcript
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'student_ai_analysis' %}active{% endif %}" href="{% url 'students:student_ai_analysis' user.student.student_id %}">
+                                <i class="bi bi-robot"></i> AI Agent Analysis
                             </a>
                         </li>
                         <li class="nav-item">
@@ -264,9 +269,26 @@
     }
     
     function showStudentAIAnalysisModal() {
-        const studentId = prompt('Please enter student ID:');
+        const userRole = "{{ user.role }}";
+        let promptMessage = 'Please enter student ID:';
+
+        if (userRole === 'teacher') {
+            promptMessage = 'Enter student ID to view their AI Agent Analysis:';
+        } else if (userRole === 'student') {
+            promptMessage = 'Enter student ID (or leave blank to view your own):';
+        }
+
+        const studentId = prompt(promptMessage);
         if (studentId && studentId.trim()) {
             window.location.href = "{% url 'students:student_ai_analysis' 'PLACEHOLDER' %}".replace('PLACEHOLDER', studentId.trim());
+        } else if (userRole === 'student' && !studentId) {
+            // If student cancels or enters empty, redirect to their own analysis
+            {% if user.is_authenticated and user.student %}
+            window.location.href = "{% url 'students:student_ai_analysis' user.student.student_id %}";
+            {% else %}
+            // If no student record, show alert
+            alert('Student profile not found. Please contact administrator.');
+            {% endif %}
         }
     }
     </script>

@@ -328,26 +328,56 @@ Based on the analysis of {total_scores} assessments with an average score of {av
 - Consider peer mentoring programs
 - Explore online supplementary resources
 
-## YouTube Learning Resources
+## Recommended Resources
 
 ### Mathematics Support
-- [Khan Academy Mathematics](https://www.youtube.com/user/khanacademy) - Comprehensive math tutorials
-- [Professor Leonard](https://www.youtube.com/user/professorleonard57) - College-level mathematics
-- [PatrickJMT](https://www.youtube.com/user/patrickJMT) - Math problem-solving techniques
+<div style="margin: 10px 0;">
+    <button onclick="window.open('https://www.youtube.com/user/khanacademy', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        🎥 Khan Academy Mathematics
+    </button>
+    <button onclick="window.open('https://www.youtube.com/user/professorleonard57', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        🎓 Professor Leonard
+    </button>
+    <button onclick="window.open('https://www.youtube.com/user/patrickJMT', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        📊 PatrickJMT
+    </button>
+</div>
 
 ### Computer Science & Programming
-- [freeCodeCamp.org](https://www.youtube.com/c/Freecodecamp) - Programming tutorials and projects
-- [CS50](https://www.youtube.com/user/cs50) - Harvard's introduction to computer science
-- [The Net Ninja](https://www.youtube.com/user/thenetninja) - Web development tutorials
+<div style="margin: 10px 0;">
+    <button onclick="window.open('https://www.youtube.com/c/Freecodecamp', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        💻 freeCodeCamp.org
+    </button>
+    <button onclick="window.open('https://www.youtube.com/user/cs50', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        🍎 CS50
+    </button>
+    <button onclick="window.open('https://www.youtube.com/user/thenetninja', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        🥷 The Net Ninja
+    </button>
+</div>
 
 ### General Study Skills
-- [Thomas Frank](https://www.youtube.com/user/einfachtom) - Study tips and productivity
-- [Mariana's Study Corner](https://www.youtube.com/c/MarianasStudyCorner) - Study techniques and motivation
-- [Crash Course](https://www.youtube.com/c/crashcourse) - Subject overviews and exam prep
+<div style="margin: 10px 0;">
+    <button onclick="window.open('https://www.youtube.com/user/einfachtom', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        📚 Thomas Frank
+    </button>
+    <button onclick="window.open('https://www.youtube.com/c/MarianasStudyCorner', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        ✏️ Mariana's Study Corner
+    </button>
+    <button onclick="window.open('https://www.youtube.com/c/crashcourse', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        🎬 Crash Course
+    </button>
+</div>
 
 ### Language Learning
-- [EnglishClass101](https://www.youtube.com/user/EnglishClass101) - English language learning
-- [BBC Learning English](https://www.youtube.com/user/bbclearningenglish) - Free English lessons
+<div style="margin: 10px 0;">
+    <button onclick="window.open('https://www.youtube.com/user/EnglishClass101', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        🗣️ EnglishClass101
+    </button>
+    <button onclick="window.open('https://www.youtube.com/user/bbclearningenglish', '_blank')" style="background: #FF0000; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">
+        📺 BBC Learning English
+    </button>
+</div>
 
 ## Future Development Plan
 
