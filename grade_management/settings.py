@@ -131,9 +131,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'students.CustomUser'
 
 # 登录相关配置
-LOGIN_URL = 'login'
+LOGIN_URL = 'students:login'
 LOGIN_REDIRECT_URL = 'index'
-LOGOUT_REDIRECT_URL = 'login'
+LOGOUT_REDIRECT_URL = 'students:login'
 
 # DeepSeek API 配置
 DEEPSEEK_API_KEY = 'sk-c644f083be50412da20f753d14bd953c'  # 请替换为您的 DeepSeek API 密钥
