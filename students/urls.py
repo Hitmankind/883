@@ -9,6 +9,12 @@ urlpatterns = [
     path('', views.index, name='index'),
     # Teaching Mechanical Arm
     path('robot-arm/', views.robot_arm, name='robot_arm'),
+    path('api/arm-control/', views.arm_control, name='arm_control'),
+    path('api/arm-status/', views.arm_status, name='arm_status'),
+    path('api/start-realsense/', views.start_realsense_tracking, name='start_realsense_tracking'),
+    path('api/stop-realsense/', views.stop_realsense_tracking, name='stop_realsense_tracking'),
+    path('api/save-expression/', views.save_expression_data, name='save_expression_data'),
+    path('api/get-acceptance-data/', views.get_student_acceptance_data, name='get_student_acceptance_data'),
     
     # 学生管理
     path('students/', views.student_list, name='student_list'),

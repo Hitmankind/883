@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Avg, Max, Min, Count
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
+from django.utils import timezone
 from datetime import datetime, date
 import json
 
@@ -88,8 +89,320 @@ def index(request):
 
 @teacher_required
 def robot_arm(request):
-    """Teaching Mechanical Arm module page (demo)."""
+    """Teaching Mechanical Arm module page with face tracking."""
     return render(request, 'students/robot_arm.html')
+
+
+@teacher_required
+@require_http_methods(["POST"])
+def arm_control(request):
+    """机械臂控制API接口"""
+    try:
+        import json
+        data = json.loads(request.body)
+
+        command = data.get('command', '')
+        position = data.get('position', {})
+
+        # 这里应该与实际的机械臂硬件通信
+        # 目前返回模拟响应
+        response_data = {
+            'status': 'success',
+            'message': f'Command {command} executed',
+            'position': position,
+            'timestamp': timezone.now().isoformat()
+        }
+
+        # 根据不同的命令执行不同的操作
+        if command == 'connect':
+            # 模拟连接机械臂
+            response_data['message'] = 'Mechanical arm connected successfully'
+            response_data['arm_status'] = 'connected'
+
+        elif command == 'move':
+            # 模拟移动机械臂到指定位置
+            x = position.get('x', 0)
+            y = position.get('y', 0)
+            z = position.get('z', 0)
+            response_data['message'] = f'Arm moved to position ({x}, {y}, {z})'
+
+        elif command == 'calibrate':
+            # 模拟校准机械臂
+            response_data['message'] = 'Arm calibration completed'
+            response_data['calibration_status'] = 'success'
+
+        elif command == 'gripper':
+            # 控制机械爪
+            action = position.get('gripper', 'open')
+            response_data['message'] = f'Gripper {action} action executed'
+            response_data['gripper_status'] = action
+
+        elif command == 'track_face':
+            # 人脸追踪模式
+            face_position = position.get('face_position', {})
+            response_data['message'] = 'Face tracking mode activated'
+            response_data['tracking_active'] = True
+
+        return JsonResponse(response_data)
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@teacher_required
+@require_http_methods(["GET"])
+def arm_status(request):
+    """获取机械臂状态"""
+    try:
+        # 这里应该读取实际的机械臂状态
+        # 目前返回模拟状态
+        status_data = {
+            'status': 'connected',
+            'position': {'x': 0, 'y': 0, 'z': 0},
+            'gripper_status': 'closed',
+            'calibration_status': 'calibrated',
+            'tracking_active': False,
+            'last_command': None,
+            'timestamp': timezone.now().isoformat()
+        }
+
+        return JsonResponse(status_data)
+
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@teacher_required
+@require_http_methods(["POST"])
+def start_realsense_tracking(request):
+    """启动RealSense人脸追踪功能"""
+    try:
+        import json
+        import subprocess
+        import os
+        import threading
+        import time
+
+        data = json.loads(request.body)
+        server_address = data.get('server_address', 'localhost:8000')
+
+        # RealSense项目路径
+        realsense_project_path = r"C:\Users\ZhuanZ\CCNU_Robot\Exoskeleton-Robot"
+        main_example_path = os.path.join(realsense_project_path, "RealSense", "main_example.py")
+
+        # 检查RealSense项目是否存在
+        if not os.path.exists(main_example_path):
+            return JsonResponse({
+                'status': 'error',
+                'message': f'RealSense模块未找到: {main_example_path}'
+            }, status=404)
+
+        def run_realsense_script():
+            """在后台线程中运行RealSense脚本"""
+            try:
+                # 构建命令
+                command = [
+                    'python', main_example_path,
+                    '--server', server_address,
+                    '--function', '15'  # 功能15 - 人脸识别
+                ]
+
+                # 设置工作目录为RealSense项目目录
+                cwd = os.path.dirname(main_example_path)
+
+                # 运行脚本
+                process = subprocess.Popen(
+                    command,
+                    cwd=cwd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0
+                )
+
+                # 等待进程启动
+                time.sleep(2)
+
+                # 检查进程是否正常运行
+                if process.poll() is None:
+                    print(f"RealSense脚本已启动，PID: {process.pid}")
+                    return True
+                else:
+                    stdout, stderr = process.communicate()
+                    print(f"RealSense脚本启动失败: {stderr}")
+                    return False
+
+            except Exception as e:
+                print(f"运行RealSense脚本时出错: {str(e)}")
+                return False
+
+        # 在后台线程中运行RealSense脚本
+        thread = threading.Thread(target=run_realsense_script, daemon=True)
+        thread.start()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': f'RealSense人脸追踪已启动，服务器地址: {server_address}',
+            'server_address': server_address,
+            'function_id': '15'
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@teacher_required
+@require_http_methods(["POST"])
+def stop_realsense_tracking(request):
+    """停止RealSense人脸追踪功能"""
+    try:
+        import subprocess
+
+        # 在Windows上查找并终止python进程
+        if os.name == 'nt':
+            # 查找运行main_example.py的进程
+            find_command = 'tasklist /fi "imagename eq python.exe" /fo csv'
+            result = subprocess.run(find_command, capture_output=True, text=True, shell=True)
+
+            # 解析输出并终止相关进程
+            for line in result.stdout.split('\n'):
+                if 'main_example.py' in line:
+                    try:
+                        pid = line.split(',')[1].strip('"')
+                        subprocess.run(f'taskkill /PID {pid} /F', shell=True)
+                        print(f"已终止进程 PID: {pid}")
+                    except:
+                        pass
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'RealSense人脸追踪已停止'
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@teacher_required
+@require_http_methods(["POST"])
+def save_expression_data(request):
+    """保存学生表情分析数据到数据库"""
+    try:
+        import json
+        from decimal import Decimal
+
+        data = json.loads(request.body)
+
+        student_id = data.get('student_id')
+        if not student_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Student ID is required'
+            }, status=400)
+
+        # 创建并保存到数据库
+        acceptance_data = StudentAcceptanceData.objects.create(
+            student_id=student_id,
+            acceptance_level=data.get('acceptance_level', 0),
+            attention_level=data.get('attention_level', 0),
+            engagement_score=data.get('engagement_score', 0),
+            dominant_expression=data.get('dominant_expression', 'neutral'),
+            confidence=Decimal(str(data.get('confidence', 0))),
+            session_id=data.get('session_id', 'default_session'),
+            teacher=request.user if request.user.is_authenticated else None
+        )
+
+        print(f"Expression data saved for student {student_id}: {acceptance_data.dominant_expression}")
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Expression data saved successfully to database',
+            'data': {
+                'id': acceptance_data.id,
+                'student_id': acceptance_data.student_id,
+                'acceptance_level': acceptance_data.acceptance_level,
+                'timestamp': acceptance_data.timestamp.isoformat()
+            }
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+@teacher_required
+@require_http_methods(["GET"])
+def get_student_acceptance_data(request):
+    """获取学生接受度数据"""
+    try:
+        student_id = request.GET.get('student_id')
+        if not student_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Student ID is required'
+            }, status=400)
+
+        # 获取最近24小时的数据
+        from datetime import timedelta
+        time_threshold = timezone.now() - timedelta(hours=24)
+
+        acceptance_data = StudentAcceptanceData.objects.filter(
+            student_id=student_id,
+            timestamp__gte=time_threshold
+        ).order_by('-timestamp')
+
+        data = []
+        for record in acceptance_data:
+            data.append({
+                'id': record.id,
+                'acceptance_level': record.acceptance_level,
+                'attention_level': record.attention_level,
+                'engagement_score': record.engagement_score,
+                'dominant_expression': record.dominant_expression,
+                'confidence': float(record.confidence),
+                'timestamp': record.timestamp.isoformat()
+            })
+
+        return JsonResponse({
+            'status': 'success',
+            'data': data,
+            'count': len(data)
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 
 
 # 学生信息管理

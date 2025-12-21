@@ -302,10 +302,36 @@ class CustomUser(AbstractUser):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, verbose_name='角色')
     # 关联到学生模型
     student = models.OneToOneField(Student, on_delete=models.CASCADE, null=True, blank=True, verbose_name='关联学生')
-    
+
     class Meta:
         verbose_name = '用户'
         verbose_name_plural = '用户'
-    
+
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
+
+
+class StudentAcceptanceData(models.Model):
+    """学生接受度数据模型"""
+    student_id = models.CharField(max_length=20, verbose_name='学号')
+    acceptance_level = models.IntegerField(verbose_name='接受度水平', help_text='0-100的数值')
+    attention_level = models.IntegerField(verbose_name='注意力水平', help_text='0-100的数值')
+    engagement_score = models.IntegerField(verbose_name='参与度评分', help_text='0-100的数值')
+    dominant_expression = models.CharField(max_length=20, verbose_name='主导表情')
+    confidence = models.DecimalField(max_digits=5, decimal_places=2, verbose_name='置信度')
+    session_id = models.CharField(max_length=50, verbose_name='会话ID')
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name='记录时间')
+    teacher = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name='记录教师', null=True, blank=True)
+
+    class Meta:
+        verbose_name = '学生接受度数据'
+        verbose_name_plural = '学生接受度数据'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['student_id', '-timestamp']),
+            models.Index(fields=['session_id']),
+            models.Index(fields=['timestamp']),
+        ]
+
+    def __str__(self):
+        return f"{self.student_id} - {self.acceptance_level}% ({self.timestamp.strftime('%Y-%m-%d %H:%M')})"

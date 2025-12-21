@@ -1,31 +1,1722 @@
 {% extends 'students/base.html' %}
 
-{% block title %}Teaching Mechanical Arm - Demo{% endblock %}
+{% block title %}Teaching Mechanical Arm - Face Tracking{% endblock %}
 
 {% block page_title %}Teaching Mechanical Arm Module{% endblock %}
 
+{% block extra_css %}
+<style>
+.face-tracking-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 20px;
+    color: white;
+}
+
+.video-container {
+    position: relative;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+}
+
+#videoElement {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.face-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.face-box {
+    position: absolute;
+    border: 3px solid #00ff00;
+    border-radius: 8px;
+    background: rgba(0, 255, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.control-panel {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-active {
+    background: #28a745;
+    animation: pulse 2s infinite;
+}
+
+.status-inactive {
+    background: #dc3545;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.arm-visualization {
+    background: #f8f9fa;
+    border-radius: 10px;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.arm-joint {
+    width: 20px;
+    height: 20px;
+    background: #007bff;
+    border-radius: 50%;
+    position: absolute;
+    border: 3px solid #0056b3;
+}
+
+.arm-segment {
+    position: absolute;
+    background: #007bff;
+    transform-origin: left center;
+    height: 6px;
+    border-radius: 3px;
+}
+
+.coordinates-display {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+    color: #00ff00;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
-  <div class="col-12">
-    <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-robot text-primary me-2"></i>Mechanical Arm Demo</h5>
+  <!-- Face Tracking Section -->
+  <div class="col-lg-8 mb-4">
+    <div class="card">
+      <div class="card-header face-tracking-container">
+        <h5 class="mb-0"><i class="bi bi-camera-video me-2"></i>Mechanical Arm Face Tracking System</h5>
       </div>
-      <div class="card-body">
-        <p class="text-muted mb-3">This demo showcases a teaching mechanical arm module placeholder. Integrate real controls or stream in the future.</p>
-        <div class="text-center mb-4">
-          <div class="bg-light border rounded p-5">
-            <i class="bi bi-gear-wide-connected display-4 text-secondary"></i>
-            <p class="mt-3 mb-0">Mechanical Arm Visualization Placeholder</p>
+      <div class="card-body p-0">
+        <!-- Video Feed -->
+        <div class="video-container">
+          <video id="videoElement" autoplay></video>
+          <canvas id="overlayCanvas" class="face-overlay"></canvas>
+
+          <!-- Status Overlay -->
+          <div class="position-absolute top-0 start-0 m-3">
+            <div class="coordinates-display">
+              <div><span class="status-indicator status-inactive" id="trackingStatus"></span>Tracking: <span id="trackingStatusText">Inactive</span></div>
+              <div>Face Position: (<span id="faceX">--</span>, <span id="faceY">--</span>)</div>
+              <div>Arm Position: (<span id="armX">0</span>, <span id="armY">0</span>, <span id="armZ">0</span>)</div>
+            </div>
           </div>
         </div>
-        <div class="d-flex gap-2 justify-content-center">
-          <button class="btn btn-primary" onclick="alert('Move command demo')"><i class="bi bi-arrow-up-right"></i> Move</button>
-          <button class="btn btn-outline-primary" onclick="alert('Grip command demo')"><i class="bi bi-hand-index"></i> Grip</button>
-          <button class="btn btn-outline-secondary" onclick="alert('Release command demo')"><i class="bi bi-hand-thumbs-up"></i> Release</button>
+
+        <!-- Control Panel -->
+        <div class="p-3 border-top">
+          <!-- Mode Selection -->
+          <div class="row g-3 mb-3">
+            <div class="col-12">
+              <div class="control-panel">
+                <h6 class="text-white mb-3"><i class="bi bi-gear-fill me-2"></i>Tracking Mode Selection</h6>
+                <div class="btn-group w-100" role="group">
+                  <input type="radio" class="btn-check" name="trackingMode" id="webcamMode" autocomplete="off" checked>
+                  <label class="btn btn-outline-light" for="webcamMode">
+                    <i class="bi bi-webcam me-2"></i>Webcam Mode
+                  </label>
+
+                  <input type="radio" class="btn-check" name="trackingMode" id="realsenseMode" autocomplete="off">
+                  <label class="btn btn-outline-light" for="realsenseMode">
+                    <i class="bi bi-camera-reels me-2"></i>RealSense Mode
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Server Address Input for RealSense -->
+          <div class="row g-3 mb-3" id="serverAddressRow" style="display: none;">
+            <div class="col-12">
+              <div class="control-panel">
+                <h6 class="text-white mb-2"><i class="bi bi-server me-2"></i>Server Configuration</h6>
+                <div class="input-group">
+                  <span class="input-group-text">Server Address:</span>
+                  <input type="text" class="form-control" id="serverAddress" value="localhost:8000" placeholder="localhost:8000">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="control-panel">
+                <h6 class="text-white mb-3"><i class="bi bi-camera me-2"></i>Camera Controls</h6>
+                <div class="d-grid gap-2">
+                  <button class="btn btn-success" id="startCamera">
+                    <i class="bi bi-play-fill me-2"></i>Start Camera
+                  </button>
+                  <button class="btn btn-danger" id="stopCamera" disabled>
+                    <i class="bi bi-stop-fill me-2"></i>Stop Camera
+                  </button>
+                  <button class="btn btn-primary" id="startTracking" disabled>
+                    <i class="bi bi-crosshair me-2"></i>Start Face Tracking
+                  </button>
+                  <button class="btn btn-outline-secondary" id="stopTracking" disabled>
+                    <i class="bi bi-x-circle me-2"></i>Stop Tracking
+                  </button>
+
+                  <!-- Simulation Button -->
+                  <button class="btn btn-warning" id="simulateExpressions" style="display: none;">
+                    <i class="bi bi-magic me-2"></i>Simulate Expressions
+                  </button>
+
+                  <!-- Expression Analysis Toggle -->
+                  <div class="mt-3">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="enableExpressionAnalysis">
+                      <label class="form-check-label text-white" for="enableExpressionAnalysis">
+                        <i class="bi bi-emoji-smile me-1"></i>Enable Expression Analysis
+                      </label>
+                    </div>
+                    <small class="text-light opacity-75">Analyze facial expressions for student engagement</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="control-panel">
+                <h6 class="text-white mb-3"><i class="bi bi-robot me-2"></i>Mechanical Arm Controls</h6>
+                <div class="d-grid gap-2">
+                  <button class="btn btn-warning" id="connectArm">
+                    <i class="bi bi-plug me-2"></i>Connect Arm
+                  </button>
+                  <button class="btn btn-info" id="calibrateArm" disabled>
+                    <i class="bi bi-speedometer2 me-2"></i>Calibrate
+                  </button>
+                  <button class="btn btn-success" id="trackMode" disabled>
+                    <i class="bi bi-bullseye me-2"></i>Track Mode
+                  </button>
+                  <button class="btn btn-outline-primary" id="manualMode" disabled>
+                    <i class="bi bi-hand-index me-2"></i>Manual Mode
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mechanical Arm Visualization & Controls -->
+  <div class="col-lg-4 mb-4">
+    <!-- Student Expression Analysis -->
+    <div class="card mb-4">
+      <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h6 class="mb-0 text-white"><i class="bi bi-emoji-smile me-2"></i>Student Engagement Analysis</h6>
+      </div>
+      <div class="card-body p-3">
+        <!-- Student ID Input -->
+        <div class="mb-3">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-person-badge"></i> Student ID
+            </span>
+            <input type="text" class="form-control" id="studentIdInput" placeholder="Enter student ID" value="">
+            <button class="btn btn-primary" type="button" id="startSessionBtn">
+              <i class="bi bi-play-fill me-1"></i>Start
+            </button>
+            <button class="btn btn-warning" type="button" id="stopSessionBtn" disabled>
+              <i class="bi bi-stop-fill me-1"></i>Stop
+            </button>
+          </div>
+          <small class="text-muted">Enter student ID to start tracking. Data will be saved every 3 minutes.</small>
+        </div>
+
+        <!-- Session Status -->
+        <div class="mb-3" id="sessionStatus" style="display: none;">
+          <div class="alert alert-info d-flex align-items-center mb-0">
+            <i class="bi bi-clock-fill me-2"></i>
+            <span id="sessionStatusText">Session Active - Saving data every 3 minutes</span>
+          </div>
+        </div>
+
+        <!-- Expression Display -->
+        <div class="text-center mb-3">
+          <div class="expression-display bg-light rounded p-3" id="expressionDisplay">
+            <i class="bi bi-emoji-neutral display-4 text-secondary mb-2" id="expressionIcon"></i>
+            <h6 class="mb-1" id="expressionText">Not Detected</h6>
+            <small class="text-muted" id="acceptanceLevel">Waiting for face detection...</small>
+          </div>
+        </div>
+
+        <!-- Engagement Metrics -->
+        <div class="engagement-metrics">
+          <div class="metric-item mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <small class="text-muted">Acceptance Level</small>
+              <span class="badge" id="acceptanceBadge">--</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar" id="acceptanceProgress" role="progressbar" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="metric-item mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <small class="text-muted">Attention Level</small>
+              <span class="badge bg-info" id="attentionBadge">--</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-info" id="attentionProgress" role="progressbar" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div class="metric-item mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <small class="text-muted">Engagement Score</small>
+              <span class="badge bg-success" id="engagementBadge">--</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-success" id="engagementProgress" role="progressbar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expression History -->
+        <div class="mt-3">
+          <h6 class="text-muted mb-2">Recent Expressions</h6>
+          <div class="expression-history d-flex gap-1 justify-content-between" id="expressionHistory">
+            <span class="badge bg-secondary">--</span>
+            <span class="badge bg-secondary">--</span>
+            <span class="badge bg-secondary">--</span>
+            <span class="badge bg-secondary">--</span>
+            <span class="badge bg-secondary">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3D Visualization -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-cube text-primary me-2"></i>Arm Visualization</h6>
+      </div>
+      <div class="card-body">
+        <div class="arm-visualization" id="armVisualization">
+          <div class="arm-joint" style="bottom: 20px; left: 50%; transform: translateX(-50%);" id="baseJoint"></div>
+          <div class="arm-segment" id="segment1" style="width: 80px; bottom: 30px; left: 50%;"></div>
+          <div class="arm-joint" id="joint1" style="bottom: 80px; left: calc(50% + 80px);"></div>
+          <div class="arm-segment" id="segment2" style="width: 60px; bottom: 80px; left: calc(50% + 80px);"></div>
+          <div class="arm-joint" id="joint2" style="bottom: 80px; left: calc(50% + 140px);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Teaching Controls -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-controller text-success me-2"></i>Manual Controls</h6>
+      </div>
+      <div class="card-body">
+        <div class="row text-center mb-3">
+          <div class="col-4"></div>
+          <div class="col-4">
+            <button class="btn btn-outline-primary btn-sm" id="moveForward">
+              <i class="bi bi-arrow-up"></i>
+            </button>
+          </div>
+          <div class="col-4"></div>
+        </div>
+        <div class="row text-center mb-3">
+          <div class="col-4">
+            <button class="btn btn-outline-primary btn-sm" id="moveLeft">
+              <i class="bi bi-arrow-left"></i>
+            </button>
+          </div>
+          <div class="col-4">
+            <button class="btn btn-outline-secondary btn-sm" id="gripperOpen">
+              <i class="bi bi-hand-index"></i>
+            </button>
+          </div>
+          <div class="col-4">
+            <button class="btn btn-outline-primary btn-sm" id="moveRight">
+              <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+        <div class="row text-center">
+          <div class="col-4"></div>
+          <div class="col-4">
+            <button class="btn btn-outline-primary btn-sm" id="moveBackward">
+              <i class="bi bi-arrow-down"></i>
+            </button>
+          </div>
+          <div class="col-4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-gear text-info me-2"></i>Settings</h6>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Tracking Speed</label>
+          <input type="range" class="form-range" id="trackingSpeed" min="1" max="10" value="5">
+          <small class="text-muted">Current: <span id="speedValue">5</span></small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Sensitivity</label>
+          <input type="range" class="form-range" id="sensitivity" min="1" max="10" value="7">
+          <small class="text-muted">Current: <span id="sensitivityValue">7</span></small>
+        </div>
+        <div class="mb-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="autoCalibrate" checked>
+            <label class="form-check-label" for="autoCalibrate">
+              Auto Calibrate
+            </label>
+          </div>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="showDebugInfo">
+          <label class="form-check-label" for="showDebugInfo">
+            Show Debug Info
+          </label>
         </div>
       </div>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class FaceTrackingSystem {
+    constructor() {
+        this.video = document.getElementById('videoElement');
+        this.canvas = document.getElementById('overlayCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.isTracking = false;
+        this.cameraActive = false;
+        this.armConnected = false;
+        this.trackingMode = false;
+        this.currentFacePosition = null;
+        this.armPosition = { x: 0, y: 0, z: 0 };
+        this.currentMode = 'webcam'; // 'webcam' or 'realsense'
+        this.realsenseActive = false;
+
+        // Expression analysis properties
+        this.expressionHistory = [];
+        this.maxHistoryLength = 5;
+        this.expressionAnalysisActive = false;
+
+        // Session tracking properties
+        this.currentStudentId = '';
+        this.sessionActive = false;
+        this.sessionId = null;
+        this.saveInterval = null; // 3分钟间隔保存
+        this.lastSaveTime = null;
+        this.averageData = { acceptance: 0, attention: 0, engagement: 0 };
+
+        this.initializeEventListeners();
+        this.loadFaceDetection();
+    }
+
+    async loadFaceDetection() {
+        try {
+            // 动态加载face-api.js
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+            document.head.appendChild(script);
+
+            script.onload = async () => {
+                console.log('Face API loaded');
+                await this.loadModels();
+            };
+        } catch (error) {
+            console.error('Failed to load face detection:', error);
+            this.showNotification('Face detection not available', 'warning');
+        }
+    }
+
+    async loadModels() {
+        try {
+            // 使用多个CDN源以提高成功率
+            const MODEL_URLS = [
+                'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights',
+                'https://unpkg.com/face-api.js@0.22.2/weights',
+                'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights'
+            ];
+
+            let modelsLoaded = false;
+
+            for (const MODEL_URL of MODEL_URLS) {
+                try {
+                    console.log(`Trying to load models from: ${MODEL_URL}`);
+                    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                    await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+
+                    console.log('Face detection and expression models loaded successfully');
+                    document.getElementById('startTracking').disabled = false;
+                    this.expressionAnalysisActive = false; // 默认关闭，需要用户手动开启
+                    this.simulateExpressions = false; // 模拟表情检测开关
+                    modelsLoaded = true;
+                    this.showNotification('Expression analysis models loaded successfully', 'success');
+                    break;
+                } catch (modelError) {
+                    console.warn(`Failed to load from ${MODEL_URL}:`, modelError);
+                    continue;
+                }
+            }
+
+            if (!modelsLoaded) {
+                throw new Error('Failed to load models from all sources');
+            }
+        } catch (error) {
+            console.error('Failed to load models:', error);
+            this.showNotification('Expression models failed to load - Using simulation mode', 'warning');
+
+            // 显示模拟按钮作为备用方案
+            const simulationBtn = document.getElementById('simulateExpressions');
+            if (simulationBtn) {
+                simulationBtn.style.display = 'block';
+            }
+
+            // 禁用表情分析开关
+            const checkbox = document.getElementById('enableExpressionAnalysis');
+            if (checkbox) {
+                checkbox.disabled = true;
+                checkbox.checked = false;
+            }
+        }
+    }
+
+    initializeEventListeners() {
+        // Mode selection
+        document.getElementById('webcamMode').addEventListener('change', () => this.switchToWebcamMode());
+        document.getElementById('realsenseMode').addEventListener('change', () => this.switchToRealsenseMode());
+
+        // Session controls
+        document.getElementById('startSessionBtn').addEventListener('click', () => this.startSession());
+        document.getElementById('stopSessionBtn').addEventListener('click', () => this.stopSession());
+
+        // Camera controls
+        document.getElementById('startCamera').addEventListener('click', () => this.startCamera());
+        document.getElementById('stopCamera').addEventListener('click', () => this.stopCamera());
+        document.getElementById('startTracking').addEventListener('click', () => this.startTracking());
+        document.getElementById('stopTracking').addEventListener('click', () => this.stopTracking());
+
+        // Expression analysis toggle
+        document.getElementById('enableExpressionAnalysis').addEventListener('change', (e) => {
+            this.expressionAnalysisActive = e.target.checked;
+            if (e.target.checked) {
+                this.showNotification('Expression analysis enabled', 'success');
+            } else {
+                this.showNotification('Expression analysis disabled', 'info');
+            }
+        });
+
+        // Simulation button
+        document.getElementById('simulateExpressions').addEventListener('click', () => {
+            this.simulateExpressions = !this.simulateExpressions;
+            const btn = document.getElementById('simulateExpressions');
+            if (this.simulateExpressions) {
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-success');
+                btn.innerHTML = '<i class="bi bi-magic me-2"></i>Stop Simulation';
+                this.showNotification('Expression simulation enabled', 'success');
+                this.startExpressionSimulation();
+            } else {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-warning');
+                btn.innerHTML = '<i class="bi bi-magic me-2"></i>Simulate Expressions';
+                this.showNotification('Expression simulation disabled', 'info');
+                this.stopExpressionSimulation();
+            }
+        });
+
+        // Arm controls
+        document.getElementById('connectArm').addEventListener('click', () => this.connectArm());
+        document.getElementById('calibrateArm').addEventListener('click', () => this.calibrateArm());
+        document.getElementById('trackMode').addEventListener('click', () => this.setTrackMode());
+        document.getElementById('manualMode').addEventListener('click', () => this.setManualMode());
+
+        // Manual controls
+        document.getElementById('moveForward').addEventListener('click', () => this.moveArm('forward'));
+        document.getElementById('moveBackward').addEventListener('click', () => this.moveArm('backward'));
+        document.getElementById('moveLeft').addEventListener('click', () => this.moveArm('left'));
+        document.getElementById('moveRight').addEventListener('click', () => this.moveArm('right'));
+        document.getElementById('gripperOpen').addEventListener('click', () => this.controlGripper('open'));
+
+        // Settings
+        document.getElementById('trackingSpeed').addEventListener('input', (e) => {
+            document.getElementById('speedValue').textContent = e.target.value;
+        });
+
+        document.getElementById('sensitivity').addEventListener('input', (e) => {
+            document.getElementById('sensitivityValue').textContent = e.target.value;
+        });
+    }
+
+    switchToWebcamMode() {
+        this.currentMode = 'webcam';
+        document.getElementById('serverAddressRow').style.display = 'none';
+
+        // Reset tracking state
+        if (this.realsenseActive) {
+            this.stopRealsenseTracking();
+        }
+
+        // Update UI
+        this.updateTrackingButtonsForWebcam();
+        this.showNotification('Switched to Webcam mode', 'info');
+    }
+
+    switchToRealsenseMode() {
+        this.currentMode = 'realsense';
+        document.getElementById('serverAddressRow').style.display = 'block';
+
+        // Reset tracking state
+        if (this.cameraActive) {
+            this.stopCamera();
+        }
+
+        // Update UI
+        this.updateTrackingButtonsForRealsense();
+        this.showNotification('Switched to RealSense mode', 'info');
+    }
+
+    updateTrackingButtonsForWebcam() {
+        document.getElementById('startCamera').disabled = false;
+        document.getElementById('startCamera').style.display = 'block';
+        document.getElementById('stopCamera').style.display = 'block';
+        document.getElementById('startCamera').innerHTML = '<i class="bi bi-play-fill me-2"></i>Start Camera';
+    }
+
+    updateTrackingButtonsForRealsense() {
+        document.getElementById('startCamera').disabled = false;
+        document.getElementById('startCamera').style.display = 'block';
+        document.getElementById('stopCamera').style.display = 'block';
+        document.getElementById('startCamera').innerHTML = '<i class="bi bi-play-fill me-2"></i>Start RealSense';
+    }
+
+    async startRealsenseTracking() {
+        try {
+            const serverAddress = document.getElementById('serverAddress').value;
+
+            this.showNotification('Starting RealSense face tracking...', 'info');
+
+            const response = await fetch('/api/start-realsense/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    server_address: serverAddress
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                this.realsenseActive = true;
+                this.isTracking = true;
+                this.updateTrackingButtons(true);
+                this.updateTrackingStatus(true);
+                this.showNotification(data.message, 'success');
+
+                // Hide webcam video element, show RealSense placeholder
+                this.video.style.display = 'none';
+                this.canvas.style.display = 'none';
+
+                // Create RealSense status overlay
+                this.showRealSenseStatus();
+            } else {
+                this.showNotification(data.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error starting RealSense tracking:', error);
+            this.showNotification('Failed to start RealSense tracking', 'danger');
+        }
+    }
+
+    async stopRealsenseTracking() {
+        try {
+            const response = await fetch('/api/stop-realsense/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCookie('csrftoken'),
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                this.realsenseActive = false;
+                this.isTracking = false;
+                this.updateTrackingButtons(false);
+                this.updateTrackingStatus(false);
+                this.showNotification(data.message, 'success');
+
+                // Show webcam video element again
+                this.video.style.display = 'block';
+                this.canvas.style.display = 'block';
+
+                // Clear RealSense status overlay
+                this.hideRealSenseStatus();
+            } else {
+                this.showNotification(data.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error stopping RealSense tracking:', error);
+            this.showNotification('Failed to stop RealSense tracking', 'danger');
+        }
+    }
+
+    showRealSenseStatus() {
+        // Create RealSense status overlay
+        const statusDiv = document.createElement('div');
+        statusDiv.id = 'realsenseStatus';
+        statusDiv.className = 'position-absolute top-50 start-50 translate-middle';
+        statusDiv.style.zIndex = '1000';
+        statusDiv.innerHTML = `
+            <div class="bg-success text-white p-4 rounded text-center">
+                <i class="bi bi-camera-reels display-1 mb-3"></i>
+                <h5>RealSense Face Tracking Active</h5>
+                <p>System is tracking faces using Intel RealSense camera</p>
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Tracking...</span>
+                </div>
+            </div>
+        `;
+
+        const videoContainer = document.querySelector('.video-container');
+        videoContainer.appendChild(statusDiv);
+    }
+
+    hideRealSenseStatus() {
+        const statusDiv = document.getElementById('realsenseStatus');
+        if (statusDiv) {
+            statusDiv.remove();
+        }
+    }
+
+    updateTrackingButtons(trackingActive) {
+        if (trackingActive) {
+            document.getElementById('startTracking').disabled = true;
+            document.getElementById('stopTracking').disabled = false;
+        } else {
+            document.getElementById('startTracking').disabled = false;
+            document.getElementById('stopTracking').disabled = true;
+        }
+    }
+
+    async startCamera() {
+        if (this.currentMode === 'realsense') {
+            // RealSense模式 - 只需要启动追踪，不需要处理摄像头
+            this.showNotification('RealSense camera will be started with tracking', 'info');
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 640, height: 480 }
+            });
+            this.video.srcObject = stream;
+            this.cameraActive = true;
+
+            document.getElementById('startCamera').disabled = true;
+            document.getElementById('stopCamera').disabled = false;
+            document.getElementById('startTracking').disabled = false;
+
+            this.showNotification('Camera started successfully', 'success');
+        } catch (error) {
+            console.error('Camera error:', error);
+            this.showNotification('Failed to start camera', 'danger');
+        }
+    }
+
+    stopCamera() {
+        if (this.currentMode === 'realsense') {
+            // RealSense模式 - 停止追踪
+            if (this.realsenseActive) {
+                this.stopTracking();
+            }
+            this.showNotification('RealSense camera stopped', 'info');
+            return;
+        }
+
+        if (this.video.srcObject) {
+            this.video.srcObject.getTracks().forEach(track => track.stop());
+            this.video.srcObject = null;
+        }
+        this.cameraActive = false;
+        this.isTracking = false;
+
+        document.getElementById('startCamera').disabled = false;
+        document.getElementById('stopCamera').disabled = true;
+        document.getElementById('startTracking').disabled = true;
+        document.getElementById('stopTracking').disabled = true;
+
+        this.clearCanvas();
+        this.updateTrackingStatus(false);
+        this.showNotification('Camera stopped', 'info');
+    }
+
+    async startTracking() {
+        if (this.currentMode === 'realsense') {
+            // RealSense模式
+            await this.startRealsenseTracking();
+        } else {
+            // Webcam模式
+            if (!this.cameraActive) {
+                this.showNotification('Please start camera first', 'warning');
+                return;
+            }
+
+            this.isTracking = true;
+            this.updateTrackingButtons(true);
+            this.updateTrackingStatus(true);
+
+            this.showNotification('Face tracking started', 'success');
+            this.detectFaces();
+        }
+    }
+
+    async stopTracking() {
+        if (this.currentMode === 'realsense') {
+            // RealSense模式
+            await this.stopRealsenseTracking();
+        } else {
+            // Webcam模式
+            this.isTracking = false;
+            this.updateTrackingButtons(false);
+            this.updateTrackingStatus(false);
+
+            this.clearCanvas();
+            this.showNotification('Face tracking stopped', 'info');
+        }
+    }
+
+    async detectFaces() {
+        if (!this.isTracking || !this.cameraActive) return;
+
+        try {
+            const detections = await faceapi.detectAllFaces(
+                this.video,
+                new faceapi.TinyFaceDetectorOptions()
+            ).withFaceLandmarks()
+            .withFaceExpressions();
+
+            this.clearCanvas();
+
+            if (detections.length > 0) {
+                const detection = detections[0];
+                this.drawFaceBox(detection);
+                this.updateFacePosition(detection);
+
+                // 显示检测状态
+                this.updateDetectionStatus(true);
+
+                // Analyze expressions if available
+                if (detection.expressions && this.expressionAnalysisActive) {
+                    this.analyzeExpression(detection.expressions);
+                }
+
+                if (this.trackingMode && this.armConnected) {
+                    this.moveArmToFace(detection);
+                }
+            } else {
+                // 没有检测到面部
+                this.updateDetectionStatus(false);
+
+                // 如果启用了模拟表情检测，生成模拟数据
+                if (this.simulateExpressions) {
+                    this.generateSimulatedExpressions();
+                }
+            }
+        } catch (error) {
+            console.error('Face detection error:', error);
+            this.updateDetectionStatus(false);
+        }
+
+        requestAnimationFrame(() => this.detectFaces());
+    }
+
+    drawFaceBox(detection) {
+        const { x, y, width, height } = detection.detection.box;
+
+        // Set canvas size to match video
+        this.canvas.width = this.video.videoWidth;
+        this.canvas.height = this.video.videoHeight;
+
+        // Draw face box
+        this.ctx.strokeStyle = '#00ff00';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(x, y, width, height);
+
+        // Draw center point
+        const centerX = x + width / 2;
+        const centerY = y + height / 2;
+        this.ctx.fillStyle = '#00ff00';
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, 5, 0, 2 * Math.PI);
+        this.ctx.fill();
+
+        // Draw crosshair
+        this.ctx.strokeStyle = '#ff0000';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(centerX - 20, centerY);
+        this.ctx.lineTo(centerX + 20, centerY);
+        this.ctx.moveTo(centerX, centerY - 20);
+        this.ctx.lineTo(centerX, centerY + 20);
+        this.ctx.stroke();
+    }
+
+    updateFacePosition(detection) {
+        const { x, y, width, height } = detection.detection.box;
+        const centerX = Math.round(x + width / 2);
+        const centerY = Math.round(y + height / 2);
+
+        this.currentFacePosition = { x: centerX, y: centerY };
+
+        document.getElementById('faceX').textContent = centerX;
+        document.getElementById('faceY').textContent = centerY;
+    }
+
+    moveArmToFace(detection) {
+        if (!this.currentFacePosition) return;
+
+        // Convert face position to arm coordinates
+        const sensitivity = parseInt(document.getElementById('sensitivity').value);
+        const speed = parseInt(document.getElementById('trackingSpeed').value);
+
+        // Map face position to arm coordinates (example mapping)
+        const targetX = ((this.currentFacePosition.x - 320) / 320) * 200; // -200 to 200
+        const targetY = ((this.currentFacePosition.y - 240) / 240) * 150; // -150 to 150
+        const targetZ = 100; // Default distance
+
+        // Smooth movement
+        this.armPosition.x += (targetX - this.armPosition.x) * (speed / 100);
+        this.armPosition.y += (targetY - this.armPosition.y) * (speed / 100);
+        this.armPosition.z = targetZ;
+
+        this.updateArmDisplay();
+        this.sendArmCommand(this.armPosition);
+    }
+
+    connectArm() {
+        // Simulate arm connection
+        setTimeout(() => {
+            this.armConnected = true;
+            document.getElementById('connectArm').disabled = true;
+            document.getElementById('connectArm').textContent = 'Connected';
+            document.getElementById('calibrateArm').disabled = false;
+            document.getElementById('trackMode').disabled = false;
+            document.getElementById('manualMode').disabled = false;
+
+            this.showNotification('Mechanical arm connected successfully', 'success');
+        }, 1000);
+    }
+
+    calibrateArm() {
+        this.showNotification('Calibrating arm...', 'info');
+        setTimeout(() => {
+            this.armPosition = { x: 0, y: 0, z: 0 };
+            this.updateArmDisplay();
+            this.showNotification('Arm calibrated', 'success');
+        }, 2000);
+    }
+
+    setTrackMode() {
+        this.trackingMode = true;
+        document.getElementById('trackMode').classList.add('btn-success');
+        document.getElementById('trackMode').classList.remove('btn-info');
+        document.getElementById('manualMode').classList.remove('btn-success');
+        document.getElementById('manualMode').classList.add('btn-outline-primary');
+        this.showNotification('Track mode activated', 'success');
+    }
+
+    setManualMode() {
+        this.trackingMode = false;
+        document.getElementById('manualMode').classList.add('btn-success');
+        document.getElementById('manualMode').classList.remove('btn-outline-primary');
+        document.getElementById('trackMode').classList.remove('btn-success');
+        document.getElementById('trackMode').classList.add('btn-info');
+        this.showNotification('Manual mode activated', 'info');
+    }
+
+    moveArm(direction) {
+        const step = 10;
+        switch(direction) {
+            case 'forward':
+                this.armPosition.z += step;
+                break;
+            case 'backward':
+                this.armPosition.z -= step;
+                break;
+            case 'left':
+                this.armPosition.x -= step;
+                break;
+            case 'right':
+                this.armPosition.x += step;
+                break;
+        }
+        this.updateArmDisplay();
+        this.sendArmCommand(this.armPosition);
+    }
+
+    controlGripper(action) {
+        this.sendArmCommand({ gripper: action });
+        this.showNotification(`Gripper ${action}`, 'info');
+    }
+
+    async sendArmCommand(position) {
+        // Send commands to the mechanical arm via API
+        try {
+            const command = this.getCurrentCommand(position);
+
+            const response = await fetch('/api/arm-control/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    command: command,
+                    position: position
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                console.log('Arm command executed:', data.message);
+                this.showNotification(data.message, 'success');
+            } else {
+                console.error('Arm command failed:', data.message);
+                this.showNotification(data.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error sending arm command:', error);
+            this.showNotification('Failed to communicate with arm', 'danger');
+        }
+
+        // Update position display
+        document.getElementById('armX').textContent = Math.round(position.x || 0);
+        document.getElementById('armY').textContent = Math.round(position.y || 0);
+        document.getElementById('armZ').textContent = Math.round(position.z || 0);
+    }
+
+    getCurrentCommand(position) {
+        // Determine command based on position data
+        if (position.gripper !== undefined) {
+            return 'gripper';
+        } else if (position.face_position !== undefined) {
+            return 'track_face';
+        } else if (position.x !== undefined || position.y !== undefined || position.z !== undefined) {
+            return 'move';
+        }
+        return 'unknown';
+    }
+
+    getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async connectArm() {
+        try {
+            const response = await fetch('/api/arm-control/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    command: 'connect'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                this.armConnected = true;
+                document.getElementById('connectArm').disabled = true;
+                document.getElementById('connectArm').textContent = 'Connected';
+                document.getElementById('calibrateArm').disabled = false;
+                document.getElementById('trackMode').disabled = false;
+                document.getElementById('manualMode').disabled = false;
+
+                this.showNotification(data.message, 'success');
+            } else {
+                this.showNotification(data.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error connecting arm:', error);
+            this.showNotification('Failed to connect arm', 'danger');
+        }
+    }
+
+    async calibrateArm() {
+        try {
+            this.showNotification('Calibrating arm...', 'info');
+
+            const response = await fetch('/api/arm-control/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    command: 'calibrate'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                this.armPosition = { x: 0, y: 0, z: 0 };
+                this.updateArmDisplay();
+                this.showNotification(data.message, 'success');
+            } else {
+                this.showNotification(data.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error calibrating arm:', error);
+            this.showNotification('Failed to calibrate arm', 'danger');
+        }
+    }
+
+    async getArmStatus() {
+        try {
+            const response = await fetch('/api/arm-status/');
+            const data = await response.json();
+
+            if (data.status === 'connected') {
+                this.armConnected = true;
+                this.armPosition = data.position;
+                this.updateArmDisplay();
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error getting arm status:', error);
+            return null;
+        }
+    }
+
+    updateArmDisplay() {
+        // Update arm visualization based on current position
+        const joint1 = document.getElementById('joint1');
+        const joint2 = document.getElementById('joint2');
+        const segment1 = document.getElementById('segment1');
+        const segment2 = document.getElementById('segment2');
+
+        // Simple animation based on position
+        const angle1 = (this.armPosition.x / 200) * 30; // -30 to 30 degrees
+        const angle2 = (this.armPosition.y / 150) * 20; // -20 to 20 degrees
+
+        segment1.style.transform = `rotate(${angle1}deg)`;
+        segment2.style.transform = `rotate(${angle2}deg)`;
+
+        joint1.style.bottom = `${80 + angle1}px`;
+        joint2.style.left = `calc(50% + ${80 + angle1}px)`;
+    }
+
+    updateTrackingStatus(active) {
+        const statusIndicator = document.getElementById('trackingStatus');
+        const statusText = document.getElementById('trackingStatusText');
+
+        if (active) {
+            statusIndicator.classList.remove('status-inactive');
+            statusIndicator.classList.add('status-active');
+            statusText.textContent = 'Active';
+        } else {
+            statusIndicator.classList.remove('status-active');
+            statusIndicator.classList.add('status-inactive');
+            statusText.textContent = 'Inactive';
+            document.getElementById('faceX').textContent = '--';
+            document.getElementById('faceY').textContent = '--';
+        }
+    }
+
+    clearCanvas() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    updateDetectionStatus(detected) {
+        const expressionIcon = document.getElementById('expressionIcon');
+        const expressionText = document.getElementById('expressionText');
+        const acceptanceLevel = document.getElementById('acceptanceLevel');
+
+        if (!detected) {
+            // 没有检测到面部时的显示
+            expressionIcon.className = 'bi bi-emoji-neutral display-4 text-secondary mb-2';
+            expressionText.textContent = 'Not Detected';
+            acceptanceLevel.textContent = 'Waiting for face detection...';
+        } else {
+            // 检测到面部但未开启表情分析时的显示
+            if (!this.expressionAnalysisActive) {
+                expressionIcon.className = 'bi bi-emoji-smile display-4 text-primary mb-2';
+                expressionText.textContent = 'Face Detected';
+                acceptanceLevel.textContent = 'Enable expression analysis to see emotions';
+            }
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        // Create a simple notification (could be enhanced with a proper toast library)
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
+        notification.style.zIndex = '9999';
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Expression Analysis Methods
+    analyzeExpression(expressions) {
+        // Find the dominant expression
+        const dominantExpression = this.getDominantExpression(expressions);
+
+        // Calculate engagement metrics
+        const engagementMetrics = this.calculateEngagementMetrics(expressions);
+
+        // Update UI
+        this.updateExpressionDisplay(dominantExpression, engagementMetrics);
+
+        // Add to history
+        this.addToExpressionHistory(dominantExpression);
+
+        // Save data to server
+        this.saveExpressionData(dominantExpression, engagementMetrics, expressions);
+    }
+
+    async saveExpressionData(dominantExpression, metrics, allExpressions) {
+        try {
+            // 只有在session激活且有学生ID时才保存到数据库
+            if (this.sessionActive && this.currentStudentId) {
+                // 更新运行平均值
+                this.updateAverageData(metrics.acceptance, metrics.attention, metrics.engagement);
+
+                const expressionData = {
+                    student_id: this.currentStudentId,
+                    dominant_expression: dominantExpression.expression,
+                    confidence: Math.round(dominantExpression.confidence * 100),
+                    acceptance_level: metrics.acceptance,
+                    attention_level: metrics.attention,
+                    engagement_score: metrics.engagement,
+                    session_id: this.sessionId,
+                    timestamp: new Date().toISOString()
+                };
+
+                const response = await fetch('/api/save-expression/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(expressionData)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    console.log('Expression data saved:', result);
+                } else {
+                    console.warn('Failed to save expression data:', result.message);
+                }
+            } else {
+                console.log('Displaying expression data (not saving - no active session)');
+            }
+        } catch (error) {
+            console.error('Error saving expression data:', error);
+            // 即使保存失败也不影响显示
+        }
+    }
+
+    getDominantExpression(expressions) {
+        let maxExpression = 'neutral';
+        let maxValue = 0;
+
+        for (const [expression, value] of Object.entries(expressions)) {
+            if (value > maxValue) {
+                maxValue = value;
+                maxExpression = expression;
+            }
+        }
+
+        return {
+            expression: maxExpression,
+            confidence: maxValue,
+            allExpressions: expressions
+        };
+    }
+
+    calculateEngagementMetrics(expressions) {
+        // Calculate acceptance level based on positive expressions
+        const positiveExpressions = expressions.happy + expressions.surprised;
+        const neutralExpressions = expressions.neutral;
+        const negativeExpressions = expressions.angry + expressions.sad + expressions.fearful + expressions.disgusted;
+
+        // Acceptance Level: high for happy/surprised, medium for neutral, low for negative
+        let acceptanceLevel = 50; // baseline
+        if (expressions.happy > 0.5) {
+            acceptanceLevel = 80 + (expressions.happy * 20);
+        } else if (expressions.surprised > 0.3) {
+            acceptanceLevel = 70 + (expressions.surprised * 30);
+        } else if (expressions.neutral > 0.6) {
+            acceptanceLevel = 50 + (expressions.neutral * 30);
+        } else if (negativeExpressions > 0.4) {
+            acceptanceLevel = 30 - (negativeExpressions * 50);
+        }
+
+        // Attention Level: inverse of distracted expressions
+        let attentionLevel = 75;
+        if (expressions.neutral > 0.7) {
+            attentionLevel = 60;
+        } else if (expressions.happy > 0.3) {
+            attentionLevel = 85 + (expressions.happy * 15);
+        } else if (negativeExpressions > 0.5) {
+            attentionLevel = 40 - (negativeExpressions * 40);
+        }
+
+        // Overall Engagement Score: weighted combination
+        const engagementScore = (acceptanceLevel * 0.5) + (attentionLevel * 0.3) + (expressions.happy * 20);
+
+        return {
+            acceptance: Math.round(Math.max(0, Math.min(100, acceptanceLevel))),
+            attention: Math.round(Math.max(0, Math.min(100, attentionLevel))),
+            engagement: Math.round(Math.max(0, Math.min(100, engagementScore)))
+        };
+    }
+
+    updateExpressionDisplay(dominantExpression, metrics) {
+        // Update expression icon and text
+        const iconMap = {
+            'happy': 'emoji-smile',
+            'sad': 'emoji-frown',
+            'angry': 'emoji-angry',
+            'fearful': 'emoji-frown',
+            'disgusted': 'emoji-expressionless',
+            'surprised': 'emoji-surprise',
+            'neutral': 'emoji-neutral'
+        };
+
+        const textMap = {
+            'happy': 'Happy & Engaged',
+            'sad': 'Sad',
+            'angry': 'Frustrated',
+            'fearful': 'Confused',
+            'disgusted': 'Disengaged',
+            'surprised': 'Surprised',
+            'neutral': 'Neutral'
+        };
+
+        const icon = document.getElementById('expressionIcon');
+        const text = document.getElementById('expressionText');
+        const acceptanceLevel = document.getElementById('acceptanceLevel');
+
+        // Update icon
+        icon.className = `bi bi-${iconMap[dominantExpression.expression]} display-4 mb-2`;
+
+        // Set color based on expression
+        if (dominantExpression.expression === 'happy') {
+            icon.classList.add('text-success');
+        } else if (['angry', 'sad', 'fearful', 'disgusted'].includes(dominantExpression.expression)) {
+            icon.classList.add('text-danger');
+        } else if (dominantExpression.expression === 'surprised') {
+            icon.classList.add('text-warning');
+        } else {
+            icon.classList.add('text-secondary');
+        }
+
+        // Update text
+        text.textContent = textMap[dominantExpression.expression];
+
+        // Update acceptance level text
+        const acceptanceText = this.getAcceptanceText(metrics.acceptance);
+        acceptanceLevel.textContent = acceptanceText;
+
+        // Update progress bars
+        this.updateProgressBars(metrics);
+
+        // Update badges
+        this.updateBadges(metrics);
+    }
+
+    getAcceptanceText(acceptanceLevel) {
+        if (acceptanceLevel >= 80) return 'Excellent understanding';
+        if (acceptanceLevel >= 60) return 'Good comprehension';
+        if (acceptanceLevel >= 40) return 'Moderate engagement';
+        if (acceptanceLevel >= 20) return 'Needs attention';
+        return 'Highly distracted';
+    }
+
+    updateProgressBars(metrics) {
+        // Acceptance Progress
+        const acceptanceProgress = document.getElementById('acceptanceProgress');
+        acceptanceProgress.style.width = `${metrics.acceptance}%`;
+        acceptanceProgress.className = `progress-bar ${this.getProgressBarClass(metrics.acceptance)}`;
+
+        // Attention Progress
+        const attentionProgress = document.getElementById('attentionProgress');
+        attentionProgress.style.width = `${metrics.attention}%`;
+
+        // Engagement Progress
+        const engagementProgress = document.getElementById('engagementProgress');
+        engagementProgress.style.width = `${metrics.engagement}%`;
+    }
+
+    updateBadges(metrics) {
+        // Acceptance Badge
+        const acceptanceBadge = document.getElementById('acceptanceBadge');
+        acceptanceBadge.textContent = `${metrics.acceptance}%`;
+        acceptanceBadge.className = `badge ${this.getBadgeClass(metrics.acceptance)}`;
+
+        // Attention Badge
+        const attentionBadge = document.getElementById('attentionBadge');
+        attentionBadge.textContent = `${metrics.attention}%`;
+
+        // Engagement Badge
+        const engagementBadge = document.getElementById('engagementBadge');
+        engagementBadge.textContent = `${metrics.engagement}%`;
+    }
+
+    getProgressBarClass(value) {
+        if (value >= 80) return 'bg-success';
+        if (value >= 60) return 'bg-info';
+        if (value >= 40) return 'bg-warning';
+        return 'bg-danger';
+    }
+
+    getBadgeClass(value) {
+        if (value >= 80) return 'bg-success';
+        if (value >= 60) return 'bg-info';
+        if (value >= 40) return 'bg-warning';
+        return 'bg-danger';
+    }
+
+    addToExpressionHistory(dominantExpression) {
+        // Add new expression to history
+        this.expressionHistory.unshift(dominantExpression.expression);
+
+        // Keep only the last 5 expressions
+        if (this.expressionHistory.length > this.maxHistoryLength) {
+            this.expressionHistory.pop();
+        }
+
+        // Update history display
+        this.updateExpressionHistoryDisplay();
+    }
+
+    updateExpressionHistoryDisplay() {
+        const historyContainer = document.getElementById('expressionHistory');
+        historyContainer.innerHTML = '';
+
+        // Create badges for each expression in history
+        for (let i = 0; i < this.maxHistoryLength; i++) {
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+
+            if (i < this.expressionHistory.length) {
+                const expression = this.expressionHistory[i];
+                const badgeClass = this.getHistoryBadgeClass(expression);
+                badge.classList.add(badgeClass);
+                badge.textContent = this.getExpressionLabel(expression);
+            } else {
+                badge.classList.add('bg-secondary');
+                badge.textContent = '--';
+            }
+
+            historyContainer.appendChild(badge);
+        }
+    }
+
+    getHistoryBadgeClass(expression) {
+        switch (expression) {
+            case 'happy': return 'bg-success';
+            case 'surprised': return 'bg-warning';
+            case 'neutral': return 'bg-info';
+            case 'sad': return 'bg-primary';
+            case 'angry': return 'bg-danger';
+            case 'fearful': return 'bg-secondary';
+            case 'disgusted': return 'bg-dark';
+            default: return 'bg-secondary';
+        }
+    }
+
+    getExpressionLabel(expression) {
+        const labels = {
+            'happy': '😊',
+            'sad': '😢',
+            'angry': '😠',
+            'fearful': '😨',
+            'disgusted': '🤢',
+            'surprised': '😮',
+            'neutral': '😐'
+        };
+        return labels[expression] || '❓';
+    }
+
+    // Session Management Methods
+    startSession() {
+        const studentId = document.getElementById('studentIdInput').value.trim();
+
+        if (!studentId) {
+            this.showNotification('Please enter a valid Student ID', 'warning');
+            return;
+        }
+
+        this.currentStudentId = studentId;
+        this.sessionId = 'session_' + Date.now();
+        this.sessionActive = true;
+        this.lastSaveTime = Date.now();
+        this.averageData = { acceptance: 0, attention: 0, engagement: 0 };
+
+        // Update UI
+        document.getElementById('startSessionBtn').disabled = true;
+        document.getElementById('stopSessionBtn').disabled = false;
+        document.getElementById('studentIdInput').disabled = true;
+        document.getElementById('sessionStatus').style.display = 'block';
+        document.getElementById('sessionStatusText').textContent = 'Session Active - Saving data every 3 minutes';
+
+        this.showNotification(`Started tracking for student: ${studentId}`, 'success');
+
+        // Start the 3-minute interval save
+        this.startAutoSave();
+    }
+
+    stopSession() {
+        if (this.saveInterval) {
+            clearInterval(this.saveInterval);
+            this.saveInterval = null;
+        }
+
+        // Save final data before stopping
+        if (this.lastSaveTime && (Date.now() - this.lastSaveTime) > 30000) {
+            this.saveCurrentAverageToDatabase();
+        }
+
+        // Update UI
+        document.getElementById('startSessionBtn').disabled = false;
+        document.getElementById('stopSessionBtn').disabled = true;
+        document.getElementById('studentIdInput').disabled = false;
+        document.getElementById('sessionStatus').style.display = 'none';
+        document.getElementById('sessionStatusText').textContent = 'Session Stopped';
+
+        // Reset session data
+        this.sessionActive = false;
+        this.currentStudentId = '';
+        this.sessionId = null;
+        this.averageData = { acceptance: 0, attention: 0, engagement: 0 };
+        this.lastSaveTime = null;
+
+        this.showNotification('Tracking session stopped', 'info');
+    }
+
+    startAutoSave() {
+        // Save immediately
+        this.saveCurrentAverageToDatabase();
+
+        // Set up 3-minute interval (180000 ms)
+        this.saveInterval = setInterval(() => {
+            this.saveCurrentAverageToDatabase();
+        }, 180000); // 3 minutes
+
+        // Update status with countdown
+        this.updateSessionStatusWithCountdown();
+    }
+
+    updateSessionStatusWithCountdown() {
+        let countdown = 180; // 3 minutes in seconds
+
+        const statusInterval = setInterval(() => {
+            if (!this.sessionActive) {
+                clearInterval(statusInterval);
+                return;
+            }
+
+            countdown--;
+            if (countdown <= 0) {
+                countdown = 180; // Reset countdown
+            }
+
+            const minutes = Math.floor(countdown / 60);
+            const seconds = countdown % 60;
+            document.getElementById('sessionStatusText').textContent =
+                `Session Active - Next save in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    updateAverageData(acceptance, attention, engagement) {
+        // Running average calculation
+        const weight = 0.1; // Weight for new data
+        this.averageData.acceptance = Math.round(
+            this.averageData.acceptance * (1 - weight) + acceptance * weight
+        );
+        this.averageData.attention = Math.round(
+            this.averageData.attention * (1 - weight) + attention * weight
+        );
+        this.averageData.engagement = Math.round(
+            this.averageData.engagement * (1 - weight) + engagement * weight
+        );
+
+        this.lastSaveTime = Date.now();
+    }
+
+    async saveCurrentAverageToDatabase() {
+        if (!this.sessionActive || !this.currentStudentId) {
+            return;
+        }
+
+        try {
+            const data = {
+                student_id: this.currentStudentId,
+                acceptance_level: this.averageData.acceptance,
+                attention_level: this.averageData.attention,
+                engagement_score: this.averageData.engagement,
+                session_id: this.sessionId,
+                timestamp: new Date().toISOString()
+            };
+
+            const response = await fetch('/api/save-expression/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCookie('csrftoken'),
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (result.status === 'success') {
+                console.log('Average data saved to database:', this.averageData);
+            } else {
+                console.error('Failed to save average data:', result.message);
+            }
+        } catch (error) {
+            console.error('Error saving average data:', error);
+        }
+    }
+
+    // Expression Simulation Methods
+    generateSimulatedExpressions() {
+        // 创建模拟的表情数据
+        const expressionTypes = ['happy', 'surprised', 'neutral', 'sad', 'angry'];
+        const randomExpression = expressionTypes[Math.floor(Math.random() * expressionTypes.length)];
+
+        // 生成随机的表情概率
+        const expressions = {
+            neutral: Math.random() * 0.3,
+            happy: Math.random() * 0.3,
+            sad: Math.random() * 0.2,
+            angry: Math.random() * 0.2,
+            fearful: Math.random() * 0.15,
+            disgusted: Math.random() * 0.1,
+            surprised: Math.random() * 0.4
+        };
+
+        // 强化选中的表情
+        expressions[randomExpression] = 0.6 + Math.random() * 0.3;
+
+        // 标准化确保总和为1
+        const total = Object.values(expressions).reduce((sum, val) => sum + val, 0);
+        for (const key in expressions) {
+            expressions[key] = expressions[key] / total;
+        }
+
+        // 分析模拟的表情
+        if (this.expressionAnalysisActive) {
+            this.analyzeExpression(expressions);
+
+            // 更新检测状态
+            this.updateDetectionStatus(true);
+
+            console.log('Simulated expression:', randomExpression, expressions);
+        }
+    }
+
+    startExpressionSimulation() {
+        // 清除可能存在的旧定时器
+        if (this.simulationInterval) {
+            clearInterval(this.simulationInterval);
+        }
+
+        // 立即生成一个表情
+        this.generateSimulatedExpressions();
+
+        // 每2-5秒切换一次表情
+        this.simulationInterval = setInterval(() => {
+            this.generateSimulatedExpressions();
+        }, 2000 + Math.random() * 3000);
+
+        // 显示模拟按钮
+        document.getElementById('simulateExpressions').style.display = 'block';
+    }
+
+    stopExpressionSimulation() {
+        if (this.simulationInterval) {
+            clearInterval(this.simulationInterval);
+            this.simulationInterval = null;
+        }
+
+        // 重置显示状态
+        this.updateDetectionStatus(false);
+    }
+
+  }
+
+// Initialize the face tracking system when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    const trackingSystem = new FaceTrackingSystem();
+});
+</script>
 {% endblock %}
